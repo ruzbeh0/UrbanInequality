@@ -48,7 +48,7 @@ namespace UrbanInequality.Systems
             {
                 _maxBuildingsPerLevel_Temp[i] = math.max(1, Mathf.FloorToInt(_totalBuildings_Temp * MaxLevelPercent[i]));
                 _maxBuildingsPerLevel[i] = _maxBuildingsPerLevel_Temp[i];
-                Mod.log.Info($"_totalBuildings: {_totalBuildings} _maxBuildingsPerLevel[{i}]={_maxBuildingsPerLevel[i]}");
+                //Mod.log.Info($"_totalBuildings: {_totalBuildings} _maxBuildingsPerLevel[{i}]={_maxBuildingsPerLevel[i]}");
             }
             
             buildingDataArray.Dispose();
