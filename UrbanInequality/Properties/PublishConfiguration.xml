@@ -1,0 +1,50 @@
+﻿<Publish>
+	<!--Id must be set in order to update existed mod. it is not required for publishing mod for the first time-->
+	<ModId Value="" />
+	<!--Name of the mod to display to players-->
+	<DisplayName Value="UrbanInequality" />
+	<!--Short description of the mod-->
+	<ShortDescription Value="This mod adds realistic building progression based on education, income, and global level caps. Create diverse, unequal cities where only the most developed areas reach the top." />
+	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
+	<!--LongDescription Value="This is a long description" /-->
+	<LongDescription>
+## Urban Inequality – Realistic Building Growth
+
+Urban Inequality transforms the way buildings evolve in your city by introducing realistic socio-economic dynamics. Inspired by real-world urban development patterns, this mod creates a city where not every neighborhood becomes a utopia — and where growth is earned.
+
+## Features
+* Education-Based Progression: Building upgrades now consider the education level of adult and senior residents. Higher education leads to faster growth, while low education holds neighborhoods back.
+* Income-Driven Penalties: Low-income households face harsher conditions for leveling up, mimicking real-world development disparities.
+* City-Wide Level Caps: Set realistic caps on how many buildings can reach each level — for example, only 5–10% of all buildings might become level 5, just like in actual cities.
+* 20 Real City Presets: Select from cities like Tokyo, São Paulo, London, and New York to instantly apply their typical building distribution patterns.
+* Fully Configurable: Adjust penalty strength and level cap percentages directly from the settings menu.
+
+## Note on Existing Cities
+This mod does not retroactively downgrade or restrict already-upgraded buildings. The new rules apply only to future upgrades that happen after the mod is enabled. For the most immersive experience, it’s best used from the start of a new city.
+	</LongDescription>
+	<!--Thumbnail-->
+	<Thumbnail Value="Properties/Thumbnail.png" />
+	<!--Screenshot, can be set multiple times-->
+	<Screenshot Value="" />
+	<!--Tag, can be set multiple times-->
+	<Tag Value="" />
+	<!--Link to the forum post where the mod can be discussed-->
+	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/time2work-mod.1655887/" />
+	<!--Version of the mod-->
+	<ModVersion Value="0.1" />
+	<!--Recommended version of the base game to use the mod-->
+	<GameVersion Value="1.2.*" />
+	<!--Dependency for the mod, can be set multiple times-->
+	<Dependency Id="" />
+	<!--Required DLC, can be set multiple times. Supported values are "Landmark Buildings", "San Fransisco Set", "Beach Properties", "Urban Promenades", "Modern Architecture"-->
+	<RequiredDLC Value="" />
+	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
+	<ChangeLog Value="" />
+	<!--<ChangeLog>
+	</ChangeLog>-->
+	<!--External link, can be set multiple times. supported types are "discord", "github", "youtube", "twitch", "x", "paypal", "patreon", "buymeacoffee", "kofi", "crowdin", "gitlab", "gofundme"-->
+	<ExternalLink Type="github" Url="https://github.com/ruzbeh0/Time2Work" />
+	<ExternalLink Type="discord" Url="https://discord.com/channels/1024242828114673724/1224077120641302558" />
+	<ExternalLink Type="paypal" Url="https://www.paypal.com/paypalme/ruzbeh0" />
+	<ExternalLink Type="kofi" Url="https://ko-fi.com/ruzbeh0" />
+</Publish>
