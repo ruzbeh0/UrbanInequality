@@ -48,12 +48,11 @@ namespace UrbanInequality.Systems
             {
                 _maxBuildingsPerLevel_Temp[i] = math.max(1, Mathf.FloorToInt(_totalBuildings_Temp * MaxLevelPercent[i]));
                 _maxBuildingsPerLevel[i] = _maxBuildingsPerLevel_Temp[i];
-                //Mod.log.Info($"_totalBuildings: {_totalBuildings} _maxBuildingsPerLevel[{i}]={_maxBuildingsPerLevel[i]}");
+                _buildingCounts[i] = _buildingCounts_Temp[i];
+                //Mod.log.Info($"_buildingCounts[i]: {_buildingCounts[i]} _maxBuildingsPerLevel[{i}]={_maxBuildingsPerLevel[i]}");
             }
             
-            buildingDataArray.Dispose();
-
-            
+            buildingDataArray.Dispose(); 
         }
 
         public void GetLevelData(out NativeArray<int> levelCounts, out NativeArray<int> maxCounts, Allocator allocator)
@@ -69,8 +68,8 @@ namespace UrbanInequality.Systems
 
         public override int GetUpdateInterval(SystemUpdatePhase phase)
         {
-            // One day (or month) in-game is '262144' ticks
-            return 262144 / 2;
+
+            return 262144 / (UrbanInequalityBuildingUpkeepSystem.kUpdatesPerDay * 16);
         }
     }
 }

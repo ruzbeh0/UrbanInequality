@@ -19,6 +19,8 @@ Urban Inequality transforms the way buildings evolve in your city by introducing
 * 20 Real City Presets: Select from cities like Tokyo, São Paulo, London, and New York to instantly apply their typical building distribution patterns.
 * Fully Configurable: Adjust penalty strength and level cap percentages directly from the settings menu.
 
+This mod currently only applies to residential buildings.
+
 ## Note on Existing Cities
 This mod does not retroactively downgrade or restrict already-upgraded buildings. The new rules apply only to future upgrades that happen after the mod is enabled. For the most immersive experience, it’s best used from the start of a new city.
 	</LongDescription>
@@ -29,9 +31,9 @@ This mod does not retroactively downgrade or restrict already-upgraded buildings
 	<!--Tag, can be set multiple times-->
 	<Tag Value="" />
 	<!--Link to the forum post where the mod can be discussed-->
-	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/time2work-mod.1655887/" />
+	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/urban-inequality-mod.1760203/" />
 	<!--Version of the mod-->
-	<ModVersion Value="0.1" />
+	<ModVersion Value="0.2" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.2.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -39,12 +41,14 @@ This mod does not retroactively downgrade or restrict already-upgraded buildings
 	<!--Required DLC, can be set multiple times. Supported values are "Landmark Buildings", "San Fransisco Set", "Beach Properties", "Urban Promenades", "Modern Architecture"-->
 	<RequiredDLC Value="" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
-	<ChangeLog Value="" />
-	<!--<ChangeLog>
-	</ChangeLog>-->
+	<ChangeLog>
+* Fixed bugs affecting how income penalties were calculated
+* Fixed bugs affecting how cap level limits calculations
+* Implemented score system to prioritize leveling up buildings with better scores
+	</ChangeLog>
 	<!--External link, can be set multiple times. supported types are "discord", "github", "youtube", "twitch", "x", "paypal", "patreon", "buymeacoffee", "kofi", "crowdin", "gitlab", "gofundme"-->
-	<ExternalLink Type="github" Url="https://github.com/ruzbeh0/Time2Work" />
-	<ExternalLink Type="discord" Url="https://discord.com/channels/1024242828114673724/1224077120641302558" />
+	<ExternalLink Type="github" Url="https://github.com/ruzbeh0/UrbanInequality" />
+	<ExternalLink Type="discord" Url="https://discord.com/channels/1024242828114673724/1376574485603287041" />
 	<ExternalLink Type="paypal" Url="https://www.paypal.com/paypalme/ruzbeh0" />
 	<ExternalLink Type="kofi" Url="https://ko-fi.com/ruzbeh0" />
 </Publish>

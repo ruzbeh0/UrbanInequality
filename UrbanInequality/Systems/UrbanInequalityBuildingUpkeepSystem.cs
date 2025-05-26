@@ -584,6 +584,8 @@ namespace UrbanInequality.Systems
                     BuildingPropertyData buildingPropertyData2 = this.m_BuildingPropertyDatas[prefab];
                     int levelingCost = BuildingUtils.GetLevelingCost(areaType, buildingPropertyData2, (int)spawnableBuildingData.m_Level, cityModifierBuf);
 
+                    Unity.Mathematics.Random random = new Unity.Mathematics.Random((uint)(1UL + (ulong)entity1.Index * (ulong)this.m_SimulationFrame));
+
                     if (areaType == AreaType.Residential)
                     {
                         int totalEdu = 0, eduCount = 0;
@@ -614,20 +616,26 @@ namespace UrbanInequality.Systems
                         float avgEdu = eduCount > 0 ? (float)totalEdu / eduCount : 0f;
                         float avgIncome = incomeCount > 0 ? (float)totalIncome / incomeCount : 0f;
 
+                        //Calculate score to be used to decide if the building can level up
+                        float eduScore = avgEdu / 4.0f;
+                        float incomeScore = avgIncome / 4000f;
+                        float score = Math.Max(0.05f,0.6f * eduScore + 0.4f * incomeScore);
+                        float weightedScore = math.pow(score, 3);
+
                         int incomeBracket = 4;
                         if (avgIncome < 500) incomeBracket = 0;
-                        if (avgIncome < 1000) incomeBracket = 1;
-                        if (avgIncome < 1500) incomeBracket = 2;
-                        if (avgIncome < 2500) incomeBracket = 3;
+                        else if (avgIncome < 1000) incomeBracket = 1;
+                        else if (avgIncome < 1500) incomeBracket = 2;
+                        else if (avgIncome < 2500) incomeBracket = 3;
 
                         float eduPenalty = maxEduPenalty - (maxEduPenalty - minEduPenalty) * avgEdu /4;
                         float incomePenalty = maxIncPenalty - (maxIncPenalty - minIncPenalty) * incomeBracket /4;
                         float finalPenalty = eduPenalty * incomePenalty;
 
                         int baseCost = levelingCost;
-                        int adjustedCost = Mathf.RoundToInt(baseCost * finalPenalty);
+                        levelingCost = Mathf.RoundToInt(baseCost * finalPenalty);
 
-                        //Mod.log.Info($"Residential Leveling Cost: Base={baseCost}, Adjusted={adjustedCost}, EduPenalty={eduPenalty}, IncomePenalty={incomePenalty}");
+                        //Mod.log.Info($"Residential Leveling Cost: Base={baseCost}, Adjusted={levelingCost}, EduPenalty={eduPenalty}, IncomePenalty={incomePenalty}");
 
                         int currentLevel = spawnableBuildingData.m_Level;
                         int targetLevel = math.clamp(currentLevel + 1, 1, 5);
@@ -647,9 +655,17 @@ namespace UrbanInequality.Systems
                         if (levelUp)
                         {
                             return;
-                        } 
-
-
+                        } else
+                        {
+                            if (random.NextFloat() < (1 - weightedScore))
+                            {
+                                //Mod.log.Info($"Residential Building Failed to level up. avgEdu: {avgEdu}, avgIncome: {avgIncome}, incomeBracket:{incomeBracket}, Score: {score}, Weighted Score: {weightedScore}, EduPenalty: {eduPenalty}, IncomePenalty: {incomePenalty}");
+                                return;
+                            } else
+                            {
+                                //Mod.log.Info($"Residential Building Level up. avgEdu: {avgEdu}, avgIncome: {avgIncome}, incomeBracket:{incomeBracket}, Score: {score}, Weighted Score: {weightedScore}, EduPenalty: {eduPenalty}, IncomePenalty: {incomePenalty}");
+                            }
+                        }
                     }
                     int num2 = spawnableBuildingData.m_Level == (byte)5 ? BuildingUtils.GetLevelingCost(areaType, buildingPropertyData2, 4, cityModifierBuf) : levelingCost;
                     if (areaType == AreaType.Residential && buildingPropertyData2.m_ResidentialProperties > 1)
@@ -660,7 +676,6 @@ namespace UrbanInequality.Systems
                     int num3 = val1 / UrbanInequalityBuildingUpkeepSystem.kMaterialUpkeep;
                     int num4 = num1 + (val1 - num3);
                     
-                    Unity.Mathematics.Random random = new Unity.Mathematics.Random((uint)(1UL + (ulong)entity1.Index * (ulong)this.m_SimulationFrame));
                     Resource resource1 = random.NextBool() ? Resource.Timber : Resource.Concrete;
                     
                     
