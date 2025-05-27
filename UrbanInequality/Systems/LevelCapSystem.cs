@@ -1,6 +1,12 @@
-﻿using Game;
+﻿using Colossal;
+using Colossal.Entities;
+using Game;
 using Game.Buildings;
+using Game.Common;
 using Game.Prefabs;
+using Game.Simulation;
+using Game.Tools;
+using Game.UI.InGame;
 using System;
 using Unity.Burst;
 using Unity.Collections;
@@ -23,26 +29,62 @@ namespace UrbanInequality.Systems
 
         protected override void OnCreate()
         {
-            _buildingQuery = GetEntityQuery(ComponentType.ReadOnly<SpawnableBuildingData>());
+            _buildingQuery = this.GetEntityQuery(new EntityQueryDesc()
+            {
+                All = new ComponentType[3]
+              {
+          ComponentType.ReadOnly<BuildingCondition>(),
+          ComponentType.ReadOnly<PrefabRef>(),
+          ComponentType.ReadOnly<UpdateFrame>()
+              },
+                Any = new ComponentType[1]
+                {
+                    ComponentType.ReadOnly<ResidentialProperty>(),
+                },
+                None = new ComponentType[4]
+              {
+          ComponentType.ReadOnly<Abandoned>(),
+          ComponentType.ReadOnly<Destroyed>(),
+          ComponentType.ReadOnly<Deleted>(),
+          ComponentType.ReadOnly<Temp>()
+              }
+            });
+
             RequireForUpdate(_buildingQuery);
         }
 
         protected override void OnUpdate()
         {
-            var buildingDataArray = _buildingQuery.ToComponentDataArray<SpawnableBuildingData>(Allocator.Temp);
+            
+
+            var buildings = _buildingQuery.ToEntityArray(Allocator.Temp);
 
             int[] _buildingCounts_Temp = new int[6];     // Index = level
             int[] _maxBuildingsPerLevel_Temp = new int[6];
             int _totalBuildings_Temp = 0;
 
-            foreach (var building in buildingDataArray)
+
+            foreach (var building in buildings)
             {
-                int level = math.clamp(building.m_Level, 1, 5);
-                _buildingCounts_Temp[level]++;
-                _totalBuildings_Temp++;
+                if (!EntityManager.TryGetComponent(building, out PrefabRef prefab))
+                    continue;
+
+                if (EntityManager.TryGetComponent<SpawnableBuildingData>(prefab.m_Prefab, out var spawnableBuildingData)) {
+                    if (EntityManager.TryGetComponent<ZoneData>(spawnableBuildingData.m_ZonePrefab, out var zonedata))
+                    {
+                        if (zonedata.m_AreaType == Game.Zones.AreaType.Residential)
+                        {
+                            int level = math.clamp(spawnableBuildingData.m_Level, 1, 5);
+                            _buildingCounts_Temp[level]++;
+                            _totalBuildings_Temp++;
+                        }
+                    }
+                }
+                
             }
 
             _totalBuildings = _totalBuildings_Temp;
+            //Mod.log.Info($"_totalBuildings: {_totalBuildings}");
 
             for (int i = 1; i <= 5; i++)
             {
@@ -51,8 +93,8 @@ namespace UrbanInequality.Systems
                 _buildingCounts[i] = _buildingCounts_Temp[i];
                 //Mod.log.Info($"_buildingCounts[i]: {_buildingCounts[i]} _maxBuildingsPerLevel[{i}]={_maxBuildingsPerLevel[i]}");
             }
-            
-            buildingDataArray.Dispose(); 
+
+            buildings.Dispose(); 
         }
 
         public void GetLevelData(out NativeArray<int> levelCounts, out NativeArray<int> maxCounts, Allocator allocator)

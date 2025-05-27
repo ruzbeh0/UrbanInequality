@@ -647,20 +647,20 @@ namespace UrbanInequality.Systems
                             if (LevelCounts[targetLevel] >= MaxLevelCounts[targetLevel])
                             {
                                 //Mod.log.Info($"Target Level {targetLevel} already at max capacity. Cannot level up.");
-                                return;
+                                continue;
                             }
                         }
                         bool levelUp = (LevelCounts[targetLevel] >= MaxLevelCounts[targetLevel]);
                         
                         if (levelUp)
                         {
-                            return;
+                            continue;
                         } else
                         {
                             if (random.NextFloat() < (1 - weightedScore))
                             {
                                 //Mod.log.Info($"Residential Building Failed to level up. avgEdu: {avgEdu}, avgIncome: {avgIncome}, incomeBracket:{incomeBracket}, Score: {score}, Weighted Score: {weightedScore}, EduPenalty: {eduPenalty}, IncomePenalty: {incomePenalty}");
-                                return;
+                                continue;
                             } else
                             {
                                 //Mod.log.Info($"Residential Building Level up. avgEdu: {avgEdu}, avgIncome: {avgIncome}, incomeBracket:{incomeBracket}, Score: {score}, Weighted Score: {weightedScore}, EduPenalty: {eduPenalty}, IncomePenalty: {incomePenalty}");
