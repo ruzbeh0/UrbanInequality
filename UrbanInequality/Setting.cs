@@ -9,16 +9,20 @@ using System.Collections.Generic;
 namespace UrbanInequality
 {
     [FileLocation($"ModsSettings\\{nameof(UrbanInequality)}\\{nameof(UrbanInequality)}")]
-    [SettingsUIGroupOrder(LevelCapGroup, EducationGroup, IncomeGroup)]
-    [SettingsUIShowGroupName(LevelCapGroup, EducationGroup, IncomeGroup)]
+    [SettingsUIGroupOrder(CityGroup, LevelCapGroup, WageGroup, EducationGroup, IncomeGroup)]
+    [SettingsUIShowGroupName(CityGroup, LevelCapGroup, WageGroup, EducationGroup, IncomeGroup)]
     public class Setting : ModSetting
     {
         public const string IncomeSection = "IncomeSection";
         public const string EducationSection = "EducationSection";
         public const string LevelCapSection = "LevelCapSection";
+        public const string WageSection = "WageSection";
+        public const string CitySection = "CitySection";
         public const string IncomeGroup = "IncomeGroup";
         public const string EducationGroup = "EducationGroup";
         public const string LevelCapGroup = "LevelCapGroup";
+        public const string WageGroup = "WageGroup";
+        public const string CityGroup = "CityGroup";
         public Setting(IMod mod) : base(mod)
         {
 
@@ -33,6 +37,21 @@ namespace UrbanInequality
             maxEducationPenalty = 1.5f;
             selectedCity = CityOption.NewYork;
             ApplyCityCapPreset(selectedCity);
+            ApplyCityWagePreset(selectedCity);
+        }
+
+        [SettingsUISection(CitySection, CityGroup)]
+        public CityOption selectedCity { get; set; }
+
+        [SettingsUIButton]
+        [SettingsUISection(CitySection, CityGroup)]
+        public bool ApplyPresetButton
+        {
+            set
+            {
+                ApplyCityCapPreset(selectedCity);
+                ApplyCityWagePreset(selectedCity);
+            }
         }
 
         [SettingsUISlider(min = 0.1f, max = 1.5f, step = 0.01f, scalarMultiplier = 1, unit = Unit.kFloatSingleFraction)]
@@ -51,116 +70,253 @@ namespace UrbanInequality
         [SettingsUISection(EducationSection, EducationGroup)]
         public float maxEducationPenalty { get; set; }
 
-        [SettingsUISection(LevelCapSection, LevelCapGroup)]
-        public CityOption selectedCity { get; set; }
+        public float[] levelCaps = new float[6]; // index 0 unused
 
-        [SettingsUIButton]
+        [SettingsUISlider(min = 0f, max = 1f, step = 0.01f, scalarMultiplier = 1, unit = Unit.kFloatSingleFraction)]
         [SettingsUISection(LevelCapSection, LevelCapGroup)]
-        public bool ApplyPresetButton
+        public float levelCap1 { get => levelCaps[1]; set => levelCaps[1] = value; }
+
+        [SettingsUISlider(min = 0f, max = 1f, step = 0.01f, scalarMultiplier = 1, unit = Unit.kFloatSingleFraction)]
+        [SettingsUISection(LevelCapSection, LevelCapGroup)]
+        public float levelCap2 { get => levelCaps[2]; set => levelCaps[2] = value; }
+
+        [SettingsUISlider(min = 0f, max = 1f, step = 0.01f, scalarMultiplier = 1, unit = Unit.kFloatSingleFraction)]
+        [SettingsUISection(LevelCapSection, LevelCapGroup)]
+        public float levelCap3 { get => levelCaps[3]; set => levelCaps[3] = value; }
+
+        [SettingsUISlider(min = 0f, max = 1f, step = 0.01f, scalarMultiplier = 1, unit = Unit.kFloatSingleFraction)]
+        [SettingsUISection(LevelCapSection, LevelCapGroup)]
+        public float levelCap4 { get => levelCaps[4]; set => levelCaps[4] = value; }
+
+        [SettingsUISlider(min = 0f, max = 1f, step = 0.01f, scalarMultiplier = 1, unit = Unit.kFloatSingleFraction)]
+        [SettingsUISection(LevelCapSection, LevelCapGroup)]
+        public float levelCap5 { get => levelCaps[5]; set => levelCaps[5] = value; }
+
+        // ---- Wage Sliders ----
+
+        private int[] _wageLevels = new int[6];
+        public int[] wageLevels => _wageLevels;
+
+        [SettingsUISlider(min = 1000f, max = 8000f, step = 100f)]
+        [SettingsUISection(WageSection, WageGroup)]
+        public int wageLevel1 { get => _wageLevels[1]; set => _wageLevels[1] = value; }
+
+        [SettingsUISlider(min = 1000f, max = 8000f, step = 100f)]
+        [SettingsUISection(WageSection, WageGroup)]
+        public int wageLevel2 { get => _wageLevels[2]; set => _wageLevels[2] = value; }
+
+        [SettingsUISlider(min = 1000f, max = 8000f, step = 100f)]
+        [SettingsUISection(WageSection, WageGroup)]
+        public int wageLevel3 { get => _wageLevels[3]; set => _wageLevels[3] = value; }
+
+        [SettingsUISlider(min = 1000f, max = 8000f, step = 100f)]
+        [SettingsUISection(WageSection, WageGroup)]
+        public int wageLevel4 { get => _wageLevels[4]; set => _wageLevels[4] = value; }
+
+        [SettingsUISlider(min = 1000f, max = 8000f, step = 100f)]
+        [SettingsUISection(WageSection, WageGroup)]
+        public int wageLevel5 { get => _wageLevels[5]; set => _wageLevels[5] = value; }
+
+        private void SyncUIWithCaps()
         {
-            set => ApplyCityCapPreset(selectedCity);
+            levelCap1 = levelCaps[1];
+            levelCap2 = levelCaps[2];
+            levelCap3 = levelCaps[3];
+            levelCap4 = levelCaps[4];
+            levelCap5 = levelCaps[5];
         }
 
-        public float[] levelCaps = new float[6]; // index 0 unused
 
         private void ApplyCityCapPreset(CityOption city)
         {
+            levelCaps = city switch
+            {
+                CityOption.Berlin => new float[] { 0, 0.15f, 0.25f, 0.35f, 0.2f, 0.05f },
+                CityOption.SaoPaulo => new float[] { 0, 0.4f, 0.3f, 0.2f, 0.08f, 0.02f },
+                CityOption.Tokyo => new float[] { 0, 0.1f, 0.2f, 0.4f, 0.2f, 0.1f },
+                CityOption.London => new float[] { 0, 0.1f, 0.2f, 0.3f, 0.25f, 0.15f },
+                CityOption.Cairo => new float[] { 0, 0.5f, 0.3f, 0.15f, 0.04f, 0.01f },
+                CityOption.NewYork => new float[] { 0, 0.05f, 0.15f, 0.25f, 0.3f, 0.25f },
+                CityOption.Mumbai => new float[] { 0, 0.45f, 0.3f, 0.15f, 0.08f, 0.02f },
+                CityOption.Paris => new float[] { 0, 0.1f, 0.2f, 0.3f, 0.25f, 0.15f },
+                CityOption.LosAngeles => new float[] { 0, 0.05f, 0.15f, 0.3f, 0.3f, 0.2f },
+                CityOption.Moscow => new float[] { 0, 0.2f, 0.3f, 0.3f, 0.15f, 0.05f },
+                CityOption.Seoul => new float[] { 0, 0.08f, 0.2f, 0.35f, 0.25f, 0.12f },
+                CityOption.Istanbul => new float[] { 0, 0.25f, 0.3f, 0.25f, 0.15f, 0.05f },
+                CityOption.Bangkok => new float[] { 0, 0.35f, 0.3f, 0.2f, 0.1f, 0.05f },
+                CityOption.Sydney => new float[] { 0, 0.05f, 0.15f, 0.35f, 0.3f, 0.15f },
+                CityOption.MexicoCity => new float[] { 0, 0.3f, 0.3f, 0.25f, 0.1f, 0.05f },
+                CityOption.Toronto => new float[] { 0, 0.1f, 0.25f, 0.3f, 0.25f, 0.1f },
+                CityOption.BuenosAires => new float[] { 0, 0.3f, 0.3f, 0.25f, 0.1f, 0.05f },
+                CityOption.Beijing => new float[] { 0, 0.25f, 0.3f, 0.3f, 0.1f, 0.05f },
+                CityOption.CapeTown => new float[] { 0, 0.4f, 0.3f, 0.2f, 0.08f, 0.02f },
+                CityOption.RioDeJaneiro => new float[] { 0, 0.35f, 0.3f, 0.2f, 0.1f, 0.05f },
+                CityOption.Chicago => new float[] { 0, 0.1f, 0.2f, 0.3f, 0.25f, 0.15f },
+                CityOption.Santiago => new float[] { 0, 0.35f, 0.3f, 0.2f, 0.1f, 0.05f },
+                _ => new float[] { 0, 0.3f, 0.3f, 0.2f, 0.15f, 0.05f },
+            };
+
+            SyncUIWithCaps();
+        }
+
+        private void ApplyCityWagePreset(CityOption city)
+        {
             switch (city)
             {
-                case CityOption.Berlin: levelCaps = new float[] { 0, 0.15f, 0.25f, 0.35f, 0.2f, 0.05f }; break;
-                case CityOption.SaoPaulo: levelCaps = new float[] { 0, 0.4f, 0.3f, 0.2f, 0.08f, 0.02f }; break;
-                case CityOption.Tokyo: levelCaps = new float[] { 0, 0.1f, 0.2f, 0.4f, 0.2f, 0.1f }; break;
-                case CityOption.London: levelCaps = new float[] { 0, 0.1f, 0.2f, 0.3f, 0.25f, 0.15f }; break;
-                case CityOption.Cairo: levelCaps = new float[] { 0, 0.5f, 0.3f, 0.15f, 0.04f, 0.01f }; break;
-                case CityOption.NewYork: levelCaps = new float[] { 0, 0.05f, 0.15f, 0.25f, 0.3f, 0.25f }; break;
-                case CityOption.Mumbai: levelCaps = new float[] { 0, 0.45f, 0.3f, 0.15f, 0.08f, 0.02f }; break;
-                case CityOption.Paris: levelCaps = new float[] { 0, 0.1f, 0.2f, 0.3f, 0.25f, 0.15f }; break;
-                case CityOption.LosAngeles: levelCaps = new float[] { 0, 0.05f, 0.15f, 0.3f, 0.3f, 0.2f }; break;
-                case CityOption.Moscow: levelCaps = new float[] { 0, 0.2f, 0.3f, 0.3f, 0.15f, 0.05f }; break;
-                case CityOption.Seoul: levelCaps = new float[] { 0, 0.08f, 0.2f, 0.35f, 0.25f, 0.12f }; break;
-                case CityOption.Istanbul: levelCaps = new float[] { 0, 0.25f, 0.3f, 0.25f, 0.15f, 0.05f }; break;
-                case CityOption.Bangkok: levelCaps = new float[] { 0, 0.35f, 0.3f, 0.2f, 0.1f, 0.05f }; break;
-                case CityOption.Sydney: levelCaps = new float[] { 0, 0.05f, 0.15f, 0.35f, 0.3f, 0.15f }; break;
-                case CityOption.MexicoCity: levelCaps = new float[] { 0, 0.3f, 0.3f, 0.25f, 0.1f, 0.05f }; break;
-                case CityOption.Toronto: levelCaps = new float[] { 0, 0.1f, 0.25f, 0.3f, 0.25f, 0.1f }; break;
-                case CityOption.BuenosAires: levelCaps = new float[] { 0, 0.3f, 0.3f, 0.25f, 0.1f, 0.05f }; break;
-                case CityOption.Beijing: levelCaps = new float[] { 0, 0.25f, 0.3f, 0.3f, 0.1f, 0.05f }; break;
-                case CityOption.CapeTown: levelCaps = new float[] { 0, 0.4f, 0.3f, 0.2f, 0.08f, 0.02f }; break;
-                case CityOption.RioDeJaneiro: levelCaps = new float[] { 0, 0.35f, 0.3f, 0.2f, 0.1f, 0.05f }; break;
-                default: levelCaps = new float[] { 0, 0.3f, 0.3f, 0.2f, 0.15f, 0.05f }; break;
+                case CityOption.Berlin:
+                    wageLevel1 = 1400; wageLevel2 = 1800; wageLevel3 = 2100; wageLevel4 = 2400; wageLevel5 = 2700; break;
+
+                case CityOption.SaoPaulo:
+                    wageLevel1 = 1000; wageLevel2 = 1300; wageLevel3 = 1600; wageLevel4 = 2000; wageLevel5 = 2500; break;
+
+                case CityOption.Tokyo:
+                    wageLevel1 = 1600; wageLevel2 = 1900; wageLevel3 = 2200; wageLevel4 = 2500; wageLevel5 = 2700; break;
+
+                case CityOption.London:
+                    wageLevel1 = 1500; wageLevel2 = 1800; wageLevel3 = 2100; wageLevel4 = 2400; wageLevel5 = 2700; break;
+
+                case CityOption.Cairo:
+                    wageLevel1 = 1000; wageLevel2 = 1100; wageLevel3 = 1300; wageLevel4 = 1600; wageLevel5 = 2000; break;
+
+                case CityOption.NewYork:
+                    wageLevel1 = 1400; wageLevel2 = 1800; wageLevel3 = 2200; wageLevel4 = 2600; wageLevel5 = 3000; break;
+
+                case CityOption.Mumbai:
+                    wageLevel1 = 1000; wageLevel2 = 1200; wageLevel3 = 1400; wageLevel4 = 1800; wageLevel5 = 2300; break;
+
+                case CityOption.Paris:
+                    wageLevel1 = 1400; wageLevel2 = 1800; wageLevel3 = 2100; wageLevel4 = 2400; wageLevel5 = 2700; break;
+
+                case CityOption.LosAngeles:
+                    wageLevel1 = 1300; wageLevel2 = 1700; wageLevel3 = 2100; wageLevel4 = 2500; wageLevel5 = 2900; break;
+
+                case CityOption.Moscow:
+                    wageLevel1 = 1200; wageLevel2 = 1500; wageLevel3 = 1800; wageLevel4 = 2100; wageLevel5 = 2500; break;
+
+                case CityOption.Seoul:
+                    wageLevel1 = 1500; wageLevel2 = 1800; wageLevel3 = 2100; wageLevel4 = 2400; wageLevel5 = 2700; break;
+
+                case CityOption.Istanbul:
+                    wageLevel1 = 1000; wageLevel2 = 1300; wageLevel3 = 1600; wageLevel4 = 2000; wageLevel5 = 2400; break;
+
+                case CityOption.Bangkok:
+                    wageLevel1 = 1000; wageLevel2 = 1200; wageLevel3 = 1500; wageLevel4 = 1800; wageLevel5 = 2200; break;
+
+                case CityOption.Sydney:
+                    wageLevel1 = 1500; wageLevel2 = 1800; wageLevel3 = 2100; wageLevel4 = 2400; wageLevel5 = 2700; break;
+
+                case CityOption.MexicoCity:
+                    wageLevel1 = 1000; wageLevel2 = 1300; wageLevel3 = 1600; wageLevel4 = 2000; wageLevel5 = 2400; break;
+
+                case CityOption.Toronto:
+                    wageLevel1 = 1400; wageLevel2 = 1700; wageLevel3 = 2000; wageLevel4 = 2300; wageLevel5 = 2600; break;
+
+                case CityOption.BuenosAires:
+                    wageLevel1 = 1000; wageLevel2 = 1300; wageLevel3 = 1600; wageLevel4 = 1900; wageLevel5 = 2300; break;
+
+                case CityOption.Beijing:
+                    wageLevel1 = 1300; wageLevel2 = 1600; wageLevel3 = 1900; wageLevel4 = 2200; wageLevel5 = 2500; break;
+
+                case CityOption.CapeTown:
+                    wageLevel1 = 1000; wageLevel2 = 1300; wageLevel3 = 1600; wageLevel4 = 1900; wageLevel5 = 2200; break;
+
+                case CityOption.RioDeJaneiro:
+                    wageLevel1 = 1000; wageLevel2 = 1300; wageLevel3 = 1600; wageLevel4 = 2000; wageLevel5 = 2400; break;
+
+                case CityOption.Chicago:
+                    wageLevel1 = 1200; wageLevel2 = 1800; wageLevel3 = 2400; wageLevel4 = 3000; wageLevel5 = 3600; break;
+
+                case CityOption.Santiago:
+                    wageLevel1 = 1000; wageLevel2 = 1220; wageLevel3 = 2227; wageLevel4 = 3500; wageLevel5 = 5000; break;
             }
         }
+
 
         public enum CityOption
         {
             Berlin, SaoPaulo, Tokyo, London, Cairo,
             NewYork, Mumbai, Paris, LosAngeles, Moscow,
             Seoul, Istanbul, Bangkok, Sydney, MexicoCity,
-            Toronto, BuenosAires, Beijing, CapeTown, RioDeJaneiro
+            Toronto, BuenosAires, Beijing, CapeTown, RioDeJaneiro,
+            Chicago, Santiago
         }
 
         public class LocaleEN : IDictionarySource
         {
             private readonly Setting m_Setting;
-            public LocaleEN(Setting setting)
-            {
-                m_Setting = setting;
-            }
+            public LocaleEN(Setting setting) => m_Setting = setting;
+
             public IEnumerable<KeyValuePair<string, string>> ReadEntries(IList<IDictionaryEntryError> errors, Dictionary<string, int> indexCounts)
             {
-                return new Dictionary<string, string>
-            {
-                { m_Setting.GetSettingsLocaleID(), "Urban Inequality" },
-                { m_Setting.GetOptionTabLocaleID(Setting.IncomeSection), "Income" },
-                { m_Setting.GetOptionTabLocaleID(Setting.EducationSection), "Education" },
-                { m_Setting.GetOptionTabLocaleID(Setting.LevelCapSection), "Level Cap" },
-                { m_Setting.GetOptionGroupLocaleID(Setting.IncomeGroup), "Income" },
-                { m_Setting.GetOptionGroupLocaleID(Setting.EducationGroup), "Education" },
-                { m_Setting.GetOptionGroupLocaleID(Setting.LevelCapGroup), "Level Cap" },
+                var entries = new Dictionary<string, string>
+                {
+                    { m_Setting.GetSettingsLocaleID(), "Urban Inequality" },
+                    { m_Setting.GetOptionTabLocaleID(IncomeSection), "Income" },
+                    { m_Setting.GetOptionTabLocaleID(CitySection), "City" },
+                    { m_Setting.GetOptionTabLocaleID(WageSection), "Wage" },
+                    { m_Setting.GetOptionTabLocaleID(EducationSection), "Education" },
+                    { m_Setting.GetOptionTabLocaleID(LevelCapSection), "Level Cap" },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.minIncomePenalty)), "Min. Income Penalty" },
-                { m_Setting.GetOptionDescLocaleID(nameof(Setting.minIncomePenalty)), "Building level up penalty applied to residents in the highest income group" },
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.maxIncomePenalty)), "Max. Income Penalty" },
-                { m_Setting.GetOptionDescLocaleID(nameof(Setting.maxIncomePenalty)), "Building level up penalty applied to residents in the lowest income group" },
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.minEducationPenalty)), "Min. Education Penalty" },
-                { m_Setting.GetOptionDescLocaleID(nameof(Setting.minEducationPenalty)), "Building level up penalty applied to residents in the highest income group" },
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.maxEducationPenalty)), "Max. Education Penalty" },
-                { m_Setting.GetOptionDescLocaleID(nameof(Setting.maxEducationPenalty)), "Building level up penalty applied to residents in the lowest income group" },
+                    { m_Setting.GetOptionGroupLocaleID(IncomeGroup), "Income" },
+                    { m_Setting.GetOptionGroupLocaleID(EducationGroup), "Education" },
+                    { m_Setting.GetOptionGroupLocaleID(LevelCapGroup), "Level Cap" },
+                    { m_Setting.GetOptionGroupLocaleID(WageGroup), "Wage" },
+                    { m_Setting.GetOptionGroupLocaleID(CityGroup), "City" },
 
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.selectedCity)), "City Level Caps" },
-                { m_Setting.GetOptionDescLocaleID(nameof(Setting.selectedCity)), "Limits the number of buildings that can exist in each building level based on a similar distribution from real world cities. Cities in richer and more developed countries will have higher limits for the higher building levels, while cities in less developed countries will have more buildings in the lower levels." },
-                { m_Setting.GetOptionLabelLocaleID(nameof(Setting.ApplyPresetButton)), "Apply Level Caps" },
-                { m_Setting.GetOptionDescLocaleID(nameof(Setting.ApplyPresetButton)), "Apply new settings" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(minIncomePenalty)), "Min. Income Penalty" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(minIncomePenalty)), "Penalty for the highest income group" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(maxIncomePenalty)), "Max. Income Penalty" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(maxIncomePenalty)), "Penalty for the lowest income group" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(minEducationPenalty)), "Min. Education Penalty" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(minEducationPenalty)), "Penalty for the highest education group" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(maxEducationPenalty)), "Max. Education Penalty" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(maxEducationPenalty)), "Penalty for the lowest education group" },
 
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.Berlin), "Berlin" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.SaoPaulo), "São Paulo" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.Tokyo), "Tokyo" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.London), "London" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.Cairo), "Cairo" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.NewYork), "New York City" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.Mumbai), "Mumbai" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.Paris), "Paris" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.LosAngeles), "Los Angeles" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.Moscow), "Moscow" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.Seoul), "Seoul" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.Istanbul), "Istanbul" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.Bangkok), "Bangkok" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.Sydney), "Sydney" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.MexicoCity), "Mexico City" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.Toronto), "Toronto" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.BuenosAires), "Buenos Aires" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.Beijing), "Beijing" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.CapeTown), "Cape Town" },
-                { m_Setting.GetEnumValueLocaleID(Setting.CityOption.RioDeJaneiro), "Rio de Janeiro" }
+                    { m_Setting.GetOptionLabelLocaleID(nameof(selectedCity)), "City Settings" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(selectedCity)), "Choose a preset inequality distribution by city" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(ApplyPresetButton)), "Apply City Settings" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(ApplyPresetButton)), "Apply the selected city preset to level caps and wages" },
 
-            };
+                    { m_Setting.GetOptionLabelLocaleID(nameof(levelCap1)), "Level 1 Cap" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(levelCap1)), "Max % of buildings at level 1" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(levelCap2)), "Level 2 Cap" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(levelCap2)), "Max % of buildings at level 2" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(levelCap3)), "Level 3 Cap" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(levelCap3)), "Max % of buildings at level 3" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(levelCap4)), "Level 4 Cap" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(levelCap4)), "Max % of buildings at level 4" },
+                    { m_Setting.GetOptionLabelLocaleID(nameof(levelCap5)), "Level 5 Cap" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(levelCap5)), "Max % of buildings at level 5" },
+
+                    { m_Setting.GetOptionLabelLocaleID(nameof(m_Setting.wageLevel1)), "Wage Level 1" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(m_Setting.wageLevel1)), "Monthly wage for the lowest level of residents." },
+                    
+                    { m_Setting.GetOptionLabelLocaleID(nameof(m_Setting.wageLevel2)), "Wage Level 2" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(m_Setting.wageLevel2)), "Monthly wage for lower working-class residents." },
+                    
+                    { m_Setting.GetOptionLabelLocaleID(nameof(m_Setting.wageLevel3)), "Wage Level 3" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(m_Setting.wageLevel3)), "Monthly wage for middle-class residents." },
+                    
+                    { m_Setting.GetOptionLabelLocaleID(nameof(m_Setting.wageLevel4)), "Wage Level 4" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(m_Setting.wageLevel4)), "Monthly wage for upper middle-class residents." },
+                    
+                    { m_Setting.GetOptionLabelLocaleID(nameof(m_Setting.wageLevel5)), "Wage Level 5" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(m_Setting.wageLevel5)), "Monthly wage for the highest income residents." },
+
+                };
+
+                foreach (var city in Enum.GetValues(typeof(CityOption)))
+                {
+                    entries[m_Setting.GetEnumValueLocaleID((CityOption)city)] = city.ToString();
+                }
+
+                return entries;
             }
 
             public void Unload()
             {
 
             }
-
         }
     }
 }

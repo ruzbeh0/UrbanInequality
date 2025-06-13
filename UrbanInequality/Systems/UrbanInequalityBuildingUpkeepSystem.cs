@@ -26,6 +26,7 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using Unity.Entities.Internal;
 
 namespace UrbanInequality.Systems
 {
@@ -134,33 +135,6 @@ namespace UrbanInequality.Systems
             uint updateFrame = SimulationUtils.GetUpdateFrame(this.m_SimulationSystem.frameIndex, UrbanInequalityBuildingUpkeepSystem.kUpdatesPerDay, 16);
             
             BuildingConfigurationData singleton = this.m_BuildingSettingsQuery.GetSingleton<BuildingConfigurationData>();
-            
-            this.__TypeHandle.__Game_Economy_Resources_RO_BufferLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Prefabs_ResourceData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Vehicles_DeliveryTruck_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Vehicles_LayoutElement_RO_BufferLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Vehicles_OwnedVehicle_RO_BufferLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Citizens_Household_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Prefabs_ZoneData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Prefabs_SpawnableBuildingData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Common_Destroyed_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Buildings_Abandoned_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Prefabs_SignatureBuildingData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_City_CityModifier_RO_BufferLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Prefabs_BuildingPropertyData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Prefabs_BuildingData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Net_ResourceAvailability_RO_BufferLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Prefabs_ConsumptionData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Simulation_UpdateFrame_SharedComponentTypeHandle.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Buildings_Renter_RO_BufferTypeHandle.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Citizens_Citizen_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Citizens_Worker_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Citizens_HealthProblem_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_HouseholdCitizen_RO_BufferLookup.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Buildings_Building_RO_ComponentTypeHandle.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Unity_Entities_Entity_TypeHandle.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Prefabs_PrefabRef_RO_ComponentTypeHandle.Update(ref this.CheckedStateRef);
-            this.__TypeHandle.__Game_Buildings_BuildingCondition_RW_ComponentTypeHandle.Update(ref this.CheckedStateRef);
 
             // From managed system
             m_LevelCapSystem.GetLevelData(out NativeArray<int> levelCounts, out NativeArray<int> maxCounts, Allocator.TempJob);
@@ -168,34 +142,34 @@ namespace UrbanInequality.Systems
 
             UrbanInequalityBuildingUpkeepSystem.BuildingUpkeepJob jobData1 = new UrbanInequalityBuildingUpkeepSystem.BuildingUpkeepJob()
             {
-                m_ConditionType = this.__TypeHandle.__Game_Buildings_BuildingCondition_RW_ComponentTypeHandle,
-                m_PrefabType = this.__TypeHandle.__Game_Prefabs_PrefabRef_RO_ComponentTypeHandle,
-                m_EntityType = this.__TypeHandle.__Unity_Entities_Entity_TypeHandle,
-                m_BuildingType = this.__TypeHandle.__Game_Buildings_Building_RO_ComponentTypeHandle,
-                m_RenterType = this.__TypeHandle.__Game_Buildings_Renter_RO_BufferTypeHandle,
-                m_Citizens = this.__TypeHandle.__Game_Citizens_Citizen_RO_ComponentLookup,
-                m_UpdateFrameType = this.__TypeHandle.__Game_Simulation_UpdateFrame_SharedComponentTypeHandle,
-                m_ConsumptionDatas = this.__TypeHandle.__Game_Prefabs_ConsumptionData_RO_ComponentLookup,
-                m_Availabilities = this.__TypeHandle.__Game_Net_ResourceAvailability_RO_BufferLookup,
-                m_BuildingDatas = this.__TypeHandle.__Game_Prefabs_BuildingData_RO_ComponentLookup,
-                m_BuildingPropertyDatas = this.__TypeHandle.__Game_Prefabs_BuildingPropertyData_RO_ComponentLookup,
-                m_CityModifierBufs = this.__TypeHandle.__Game_City_CityModifier_RO_BufferLookup,
-                m_SignatureDatas = this.__TypeHandle.__Game_Prefabs_SignatureBuildingData_RO_ComponentLookup,
-                m_Abandoned = this.__TypeHandle.__Game_Buildings_Abandoned_RO_ComponentLookup,
-                m_Destroyed = this.__TypeHandle.__Game_Common_Destroyed_RO_ComponentLookup,
-                m_SpawnableBuildingDatas = this.__TypeHandle.__Game_Prefabs_SpawnableBuildingData_RO_ComponentLookup,
-                m_ZoneDatas = this.__TypeHandle.__Game_Prefabs_ZoneData_RO_ComponentLookup,
-                m_Households = this.__TypeHandle.__Game_Citizens_Household_RO_ComponentLookup,
-                m_OwnedVehicles = this.__TypeHandle.__Game_Vehicles_OwnedVehicle_RO_BufferLookup,
-                m_LayoutElements = this.__TypeHandle.__Game_Vehicles_LayoutElement_RO_BufferLookup,
-                m_DeliveryTrucks = this.__TypeHandle.__Game_Vehicles_DeliveryTruck_RO_ComponentLookup,
-                m_Residents = this.__TypeHandle.__Game_HouseholdCitizen_RO_BufferLookup,
-                m_Workers = this.__TypeHandle.__Game_Citizens_Worker_RO_ComponentLookup,
-                m_HealthProblems = this.__TypeHandle.__Game_Citizens_HealthProblem_RO_ComponentLookup,
+                m_ConditionType = InternalCompilerInterface.GetComponentTypeHandle<BuildingCondition>(ref this.__TypeHandle.__Game_Buildings_BuildingCondition_RW_ComponentTypeHandle, ref this.CheckedStateRef),
+                m_PrefabType = InternalCompilerInterface.GetComponentTypeHandle<PrefabRef>(ref this.__TypeHandle.__Game_Prefabs_PrefabRef_RO_ComponentTypeHandle, ref this.CheckedStateRef),
+                m_EntityType = InternalCompilerInterface.GetEntityTypeHandle(ref this.__TypeHandle.__Unity_Entities_Entity_TypeHandle, ref this.CheckedStateRef),
+                m_BuildingType = InternalCompilerInterface.GetComponentTypeHandle<Building>(ref this.__TypeHandle.__Game_Buildings_Building_RO_ComponentTypeHandle, ref this.CheckedStateRef),
+                m_RenterType = InternalCompilerInterface.GetBufferTypeHandle<Renter>(ref this.__TypeHandle.__Game_Buildings_Renter_RO_BufferTypeHandle, ref this.CheckedStateRef),
+                m_UpdateFrameType = InternalCompilerInterface.GetSharedComponentTypeHandle<UpdateFrame>(ref this.__TypeHandle.__Game_Simulation_UpdateFrame_SharedComponentTypeHandle, ref this.CheckedStateRef),
+                m_ConsumptionDatas = InternalCompilerInterface.GetComponentLookup<ConsumptionData>(ref this.__TypeHandle.__Game_Prefabs_ConsumptionData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_Availabilities = InternalCompilerInterface.GetBufferLookup<ResourceAvailability>(ref this.__TypeHandle.__Game_Net_ResourceAvailability_RO_BufferLookup, ref this.CheckedStateRef),
+                m_BuildingDatas = InternalCompilerInterface.GetComponentLookup<Game.Prefabs.BuildingData>(ref this.__TypeHandle.__Game_Prefabs_BuildingData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_BuildingPropertyDatas = InternalCompilerInterface.GetComponentLookup<BuildingPropertyData>(ref this.__TypeHandle.__Game_Prefabs_BuildingPropertyData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_CityModifierBufs = InternalCompilerInterface.GetBufferLookup<CityModifier>(ref this.__TypeHandle.__Game_City_CityModifier_RO_BufferLookup, ref this.CheckedStateRef),
+                m_SignatureDatas = InternalCompilerInterface.GetComponentLookup<SignatureBuildingData>(ref this.__TypeHandle.__Game_Prefabs_SignatureBuildingData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_Abandoned = InternalCompilerInterface.GetComponentLookup<Abandoned>(ref this.__TypeHandle.__Game_Buildings_Abandoned_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_Destroyed = InternalCompilerInterface.GetComponentLookup<Destroyed>(ref this.__TypeHandle.__Game_Common_Destroyed_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_SpawnableBuildingDatas = InternalCompilerInterface.GetComponentLookup<SpawnableBuildingData>(ref this.__TypeHandle.__Game_Prefabs_SpawnableBuildingData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_ZoneDatas = InternalCompilerInterface.GetComponentLookup<ZoneData>(ref this.__TypeHandle.__Game_Prefabs_ZoneData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_Households = InternalCompilerInterface.GetComponentLookup<Household>(ref this.__TypeHandle.__Game_Citizens_Household_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_OwnedVehicles = InternalCompilerInterface.GetBufferLookup<OwnedVehicle>(ref this.__TypeHandle.__Game_Vehicles_OwnedVehicle_RO_BufferLookup, ref this.CheckedStateRef),
+                m_LayoutElements = InternalCompilerInterface.GetBufferLookup<LayoutElement>(ref this.__TypeHandle.__Game_Vehicles_LayoutElement_RO_BufferLookup, ref this.CheckedStateRef),
+                m_DeliveryTrucks = InternalCompilerInterface.GetComponentLookup<Game.Vehicles.DeliveryTruck>(ref this.__TypeHandle.__Game_Vehicles_DeliveryTruck_RO_ComponentLookup, ref this.CheckedStateRef),
                 m_City = this.m_CitySystem.City,
                 m_ResourcePrefabs = this.m_ResourceSystem.GetPrefabs(),
-                m_ResourceDatas = this.__TypeHandle.__Game_Prefabs_ResourceData_RO_ComponentLookup,
-                m_Resources = this.__TypeHandle.__Game_Economy_Resources_RO_BufferLookup,
+                m_ResourceDatas = InternalCompilerInterface.GetComponentLookup<ResourceData>(ref this.__TypeHandle.__Game_Prefabs_ResourceData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_Resources = InternalCompilerInterface.GetBufferLookup<Game.Economy.Resources>(ref this.__TypeHandle.__Game_Economy_Resources_RO_BufferLookup, ref this.CheckedStateRef),
+                m_Citizens = InternalCompilerInterface.GetComponentLookup<Citizen>(ref this.__TypeHandle.__Game_Citizens_Citizen_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_Residents = InternalCompilerInterface.GetBufferLookup<HouseholdCitizen>(ref this.__TypeHandle.__Game_HouseholdCitizen_RO_BufferLookup, ref this.CheckedStateRef),
+                m_Workers = InternalCompilerInterface.GetComponentLookup<Worker>(ref this.__TypeHandle.__Game_Citizens_Worker_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_HealthProblems = InternalCompilerInterface.GetComponentLookup<HealthProblem>(ref this.__TypeHandle.__Game_Citizens_HealthProblem_RO_ComponentLookup, ref this.CheckedStateRef),
                 m_EconomyParameters = this.m_EconomyParameterQuery.GetSingleton<EconomyParameterData>(),
                 m_TaxRates = this.m_TaxSystem.GetTaxRates(),
                 m_BuildingConfigurationData = singleton,
@@ -224,78 +198,29 @@ namespace UrbanInequality.Systems
             levelCounts.Dispose();
             maxCounts.Dispose();
 
-            this.__TypeHandle.__Game_Zones_Cell_RO_BufferLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_ZoneData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_OfficeBuilding_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_BuildingPropertyData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_BuildingData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_SpawnableBuildingData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_PrefabData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_PrefabRef_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Zones_ValidArea_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Zones_Block_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Objects_Transform_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_BuildingSpawnGroupData_SharedComponentTypeHandle.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_ObjectGeometryData_RO_ComponentTypeHandle.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_BuildingPropertyData_RO_ComponentTypeHandle.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_BuildingData_RO_ComponentTypeHandle.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_SpawnableBuildingData_RO_ComponentTypeHandle.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Unity_Entities_Entity_TypeHandle.Update(ref this.CheckedStateRef);
             JobHandle outJobHandle;
             JobHandle dependencies;
             JobHandle deps1;
 
             UrbanInequalityBuildingUpkeepSystem.LevelupJob jobData2 = new UrbanInequalityBuildingUpkeepSystem.LevelupJob()
             {
-                m_EntityType = this.__TypeHandle.__Unity_Entities_Entity_TypeHandle,
-                m_SpawnableBuildingType = this.__TypeHandle.__Game_Prefabs_SpawnableBuildingData_RO_ComponentTypeHandle,
-                m_BuildingType = this.__TypeHandle.__Game_Prefabs_BuildingData_RO_ComponentTypeHandle,
-                m_BuildingPropertyType = this.__TypeHandle.__Game_Prefabs_BuildingPropertyData_RO_ComponentTypeHandle,
-                m_ObjectGeometryType = this.__TypeHandle.__Game_Prefabs_ObjectGeometryData_RO_ComponentTypeHandle,
-                m_BuildingSpawnGroupType = this.__TypeHandle.__Game_Prefabs_BuildingSpawnGroupData_SharedComponentTypeHandle,
-                m_TransformData = this.__TypeHandle.__Game_Objects_Transform_RO_ComponentLookup,
-                m_BlockData = this.__TypeHandle.__Game_Zones_Block_RO_ComponentLookup,
-                m_ValidAreaData = this.__TypeHandle.__Game_Zones_ValidArea_RO_ComponentLookup,
-                m_Prefabs = this.__TypeHandle.__Game_Prefabs_PrefabRef_RO_ComponentLookup,
-                m_PrefabDatas = this.__TypeHandle.__Game_Prefabs_PrefabData_RO_ComponentLookup,
-                m_SpawnableBuildings = this.__TypeHandle.__Game_Prefabs_SpawnableBuildingData_RO_ComponentLookup,
-                m_Buildings = this.__TypeHandle.__Game_Prefabs_BuildingData_RO_ComponentLookup,
-                m_BuildingPropertyDatas = this.__TypeHandle.__Game_Prefabs_BuildingPropertyData_RO_ComponentLookup,
-                m_OfficeBuilding = this.__TypeHandle.__Game_Prefabs_OfficeBuilding_RO_ComponentLookup,
-                m_ZoneData = this.__TypeHandle.__Game_Prefabs_ZoneData_RO_ComponentLookup,
-                m_Cells = this.__TypeHandle.__Game_Zones_Cell_RO_BufferLookup,
+                m_EntityType = InternalCompilerInterface.GetEntityTypeHandle(ref this.__TypeHandle.__Unity_Entities_Entity_TypeHandle, ref this.CheckedStateRef),
+                m_SpawnableBuildingType = InternalCompilerInterface.GetComponentTypeHandle<SpawnableBuildingData>(ref this.__TypeHandle.__Game_Prefabs_SpawnableBuildingData_RO_ComponentTypeHandle, ref this.CheckedStateRef),
+                m_BuildingType = InternalCompilerInterface.GetComponentTypeHandle<Game.Prefabs.BuildingData>(ref this.__TypeHandle.__Game_Prefabs_BuildingData_RO_ComponentTypeHandle, ref this.CheckedStateRef),
+                m_BuildingPropertyType = InternalCompilerInterface.GetComponentTypeHandle<BuildingPropertyData>(ref this.__TypeHandle.__Game_Prefabs_BuildingPropertyData_RO_ComponentTypeHandle, ref this.CheckedStateRef),
+                m_ObjectGeometryType = InternalCompilerInterface.GetComponentTypeHandle<ObjectGeometryData>(ref this.__TypeHandle.__Game_Prefabs_ObjectGeometryData_RO_ComponentTypeHandle, ref this.CheckedStateRef),
+                m_BuildingSpawnGroupType = InternalCompilerInterface.GetSharedComponentTypeHandle<BuildingSpawnGroupData>(ref this.__TypeHandle.__Game_Prefabs_BuildingSpawnGroupData_SharedComponentTypeHandle, ref this.CheckedStateRef),
+                m_TransformData = InternalCompilerInterface.GetComponentLookup<Game.Objects.Transform>(ref this.__TypeHandle.__Game_Objects_Transform_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_BlockData = InternalCompilerInterface.GetComponentLookup<Game.Zones.Block>(ref this.__TypeHandle.__Game_Zones_Block_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_ValidAreaData = InternalCompilerInterface.GetComponentLookup<ValidArea>(ref this.__TypeHandle.__Game_Zones_ValidArea_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_Prefabs = InternalCompilerInterface.GetComponentLookup<PrefabRef>(ref this.__TypeHandle.__Game_Prefabs_PrefabRef_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_PrefabDatas = InternalCompilerInterface.GetComponentLookup<PrefabData>(ref this.__TypeHandle.__Game_Prefabs_PrefabData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_SpawnableBuildings = InternalCompilerInterface.GetComponentLookup<SpawnableBuildingData>(ref this.__TypeHandle.__Game_Prefabs_SpawnableBuildingData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_Buildings = InternalCompilerInterface.GetComponentLookup<Game.Prefabs.BuildingData>(ref this.__TypeHandle.__Game_Prefabs_BuildingData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_BuildingPropertyDatas = InternalCompilerInterface.GetComponentLookup<BuildingPropertyData>(ref this.__TypeHandle.__Game_Prefabs_BuildingPropertyData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_OfficeBuilding = InternalCompilerInterface.GetComponentLookup<OfficeBuilding>(ref this.__TypeHandle.__Game_Prefabs_OfficeBuilding_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_ZoneData = InternalCompilerInterface.GetComponentLookup<ZoneData>(ref this.__TypeHandle.__Game_Prefabs_ZoneData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_Cells = InternalCompilerInterface.GetBufferLookup<Cell>(ref this.__TypeHandle.__Game_Zones_Cell_RO_BufferLookup, ref this.CheckedStateRef),
                 m_BuildingConfigurationData = singleton,
                 m_SpawnableBuildingChunks = this.m_BuildingPrefabGroup.ToArchetypeChunkListAsync((AllocatorManager.AllocatorHandle)this.World.UpdateAllocator.ToAllocator, out outJobHandle),
                 m_ZoneSearchTree = this.m_ZoneSearchSystem.GetSearchTree(true, out dependencies),
@@ -316,59 +241,24 @@ namespace UrbanInequality.Systems
             
             this.m_TriggerSystem.AddActionBufferWriter(this.Dependency);
             
-            
-            this.__TypeHandle.__Game_Buildings_Renter_RW_BufferLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Buildings_CrimeProducer_RW_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_OfficeBuilding_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_BuildingPropertyData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Buildings_WaterConsumer_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Buildings_MailProducer_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Buildings_GarbageProducer_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Buildings_ElectricityConsumer_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Buildings_Building_RW_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_SpawnableBuildingData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_PrefabRef_RO_ComponentLookup.Update(ref this.CheckedStateRef);
-            
-            
-            this.__TypeHandle.__Game_Prefabs_BuildingData_RO_ComponentLookup.Update(ref this.CheckedStateRef);
             JobHandle deps2;
             JobHandle deps3;
             
             UrbanInequalityBuildingUpkeepSystem.LeveldownJob jobData3 = new UrbanInequalityBuildingUpkeepSystem.LeveldownJob()
             {
-                m_BuildingDatas = this.__TypeHandle.__Game_Prefabs_BuildingData_RO_ComponentLookup,
-                m_Prefabs = this.__TypeHandle.__Game_Prefabs_PrefabRef_RO_ComponentLookup,
-                m_SpawnableBuildings = this.__TypeHandle.__Game_Prefabs_SpawnableBuildingData_RO_ComponentLookup,
-                m_Buildings = this.__TypeHandle.__Game_Buildings_Building_RW_ComponentLookup,
-                m_ElectricityConsumers = this.__TypeHandle.__Game_Buildings_ElectricityConsumer_RO_ComponentLookup,
-                m_GarbageProducers = this.__TypeHandle.__Game_Buildings_GarbageProducer_RO_ComponentLookup,
-                m_MailProducers = this.__TypeHandle.__Game_Buildings_MailProducer_RO_ComponentLookup,
-                m_WaterConsumers = this.__TypeHandle.__Game_Buildings_WaterConsumer_RO_ComponentLookup,
-                m_BuildingPropertyDatas = this.__TypeHandle.__Game_Prefabs_BuildingPropertyData_RO_ComponentLookup,
-                m_OfficeBuilding = this.__TypeHandle.__Game_Prefabs_OfficeBuilding_RO_ComponentLookup,
+                m_BuildingDatas = InternalCompilerInterface.GetComponentLookup<Game.Prefabs.BuildingData>(ref this.__TypeHandle.__Game_Prefabs_BuildingData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_Prefabs = InternalCompilerInterface.GetComponentLookup<PrefabRef>(ref this.__TypeHandle.__Game_Prefabs_PrefabRef_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_SpawnableBuildings = InternalCompilerInterface.GetComponentLookup<SpawnableBuildingData>(ref this.__TypeHandle.__Game_Prefabs_SpawnableBuildingData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_Buildings = InternalCompilerInterface.GetComponentLookup<Building>(ref this.__TypeHandle.__Game_Buildings_Building_RW_ComponentLookup, ref this.CheckedStateRef),
+                m_ElectricityConsumers = InternalCompilerInterface.GetComponentLookup<ElectricityConsumer>(ref this.__TypeHandle.__Game_Buildings_ElectricityConsumer_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_GarbageProducers = InternalCompilerInterface.GetComponentLookup<GarbageProducer>(ref this.__TypeHandle.__Game_Buildings_GarbageProducer_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_MailProducers = InternalCompilerInterface.GetComponentLookup<MailProducer>(ref this.__TypeHandle.__Game_Buildings_MailProducer_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_WaterConsumers = InternalCompilerInterface.GetComponentLookup<WaterConsumer>(ref this.__TypeHandle.__Game_Buildings_WaterConsumer_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_BuildingPropertyDatas = InternalCompilerInterface.GetComponentLookup<BuildingPropertyData>(ref this.__TypeHandle.__Game_Prefabs_BuildingPropertyData_RO_ComponentLookup, ref this.CheckedStateRef),
+                m_OfficeBuilding = InternalCompilerInterface.GetComponentLookup<OfficeBuilding>(ref this.__TypeHandle.__Game_Prefabs_OfficeBuilding_RO_ComponentLookup, ref this.CheckedStateRef),
                 m_TriggerBuffer = this.m_TriggerSystem.CreateActionBuffer(),
-                m_CrimeProducers = this.__TypeHandle.__Game_Buildings_CrimeProducer_RW_ComponentLookup,
-                m_Renters = this.__TypeHandle.__Game_Buildings_Renter_RW_BufferLookup,
+                m_CrimeProducers = InternalCompilerInterface.GetComponentLookup<CrimeProducer>(ref this.__TypeHandle.__Game_Buildings_CrimeProducer_RW_ComponentLookup, ref this.CheckedStateRef),
+                m_Renters = InternalCompilerInterface.GetBufferLookup<Renter>(ref this.__TypeHandle.__Game_Buildings_Renter_RW_BufferLookup, ref this.CheckedStateRef),
                 m_BuildingConfigurationData = singleton,
                 m_LeveldownQueue = this.m_LeveldownQueue,
                 m_CommandBuffer = this.m_EndFrameBarrier.CreateCommandBuffer(),
@@ -386,13 +276,11 @@ namespace UrbanInequality.Systems
             this.m_IconCommandSystem.AddCommandBufferWriter(this.Dependency);
             
             this.m_TriggerSystem.AddActionBufferWriter(this.Dependency);
-            
-            
-            this.__TypeHandle.__Game_Economy_Resources_RW_BufferLookup.Update(ref this.CheckedStateRef);
+
             
             UrbanInequalityBuildingUpkeepSystem.UpkeepPaymentJob jobData4 = new UrbanInequalityBuildingUpkeepSystem.UpkeepPaymentJob()
             {
-                m_Resources = this.__TypeHandle.__Game_Economy_Resources_RW_BufferLookup,
+                m_Resources = InternalCompilerInterface.GetBufferLookup<Game.Economy.Resources>(ref this.__TypeHandle.__Game_Economy_Resources_RW_BufferLookup, ref this.CheckedStateRef),
                 m_UpkeepExpenseQueue = this.m_UpkeepExpenseQueue
             };
             this.Dependency = jobData4.Schedule<UrbanInequalityBuildingUpkeepSystem.UpkeepPaymentJob>(this.Dependency);
@@ -448,6 +336,7 @@ namespace UrbanInequality.Systems
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void __AssignQueries(ref SystemState state)
         {
+            new EntityQueryBuilder((AllocatorManager.AllocatorHandle)Allocator.Temp).Dispose();
         }
 
         protected override void OnCreateForCompiler()
@@ -564,13 +453,13 @@ namespace UrbanInequality.Systems
                 NativeArray<Entity> nativeArray1 = chunk.GetNativeArray(this.m_EntityType);
                 NativeArray<PrefabRef> nativeArray2 = chunk.GetNativeArray<PrefabRef>(ref this.m_PrefabType);
                 NativeArray<BuildingCondition> nativeArray3 = chunk.GetNativeArray<BuildingCondition>(ref this.m_ConditionType);
-                NativeArray<Building> nativeArray4 = chunk.GetNativeArray<Building>(ref this.m_BuildingType);
+                chunk.GetNativeArray<Building>(ref this.m_BuildingType);
                 BufferAccessor<Renter> bufferAccessor = chunk.GetBufferAccessor<Renter>(ref this.m_RenterType);
 
                 for (int index1 = 0; index1 < chunk.Count; ++index1)
                 {
                     int num1 = 0;
-                    Entity entity1 = nativeArray1[index1];
+                    Entity entity = nativeArray1[index1];
                     Entity prefab = nativeArray2[index1].m_Prefab;
 
                     ConsumptionData consumptionData = this.m_ConsumptionDatas[prefab];
@@ -580,11 +469,12 @@ namespace UrbanInequality.Systems
                     SpawnableBuildingData spawnableBuildingData = this.m_SpawnableBuildingDatas[prefab];
                     AreaType areaType = this.m_ZoneDatas[spawnableBuildingData.m_ZonePrefab].m_AreaType;
                     DynamicBuffer<Renter> dynamicBuffer = bufferAccessor[index1];
+                    int num3 = consumptionData.m_Upkeep / BuildingUpkeepSystem.kUpdatesPerDay;
 
                     BuildingPropertyData buildingPropertyData2 = this.m_BuildingPropertyDatas[prefab];
                     int levelingCost = BuildingUtils.GetLevelingCost(areaType, buildingPropertyData2, (int)spawnableBuildingData.m_Level, cityModifierBuf);
 
-                    Unity.Mathematics.Random random = new Unity.Mathematics.Random((uint)(1UL + (ulong)entity1.Index * (ulong)this.m_SimulationFrame));
+                    Unity.Mathematics.Random random = new Unity.Mathematics.Random((uint)(1UL + (ulong)entity.Index * (ulong)this.m_SimulationFrame));
 
                     if (areaType == AreaType.Residential)
                     {
@@ -670,78 +560,11 @@ namespace UrbanInequality.Systems
                     int num2 = spawnableBuildingData.m_Level == (byte)5 ? BuildingUtils.GetLevelingCost(areaType, buildingPropertyData2, 4, cityModifierBuf) : levelingCost;
                     if (areaType == AreaType.Residential && buildingPropertyData2.m_ResidentialProperties > 1)
                         num2 = Mathf.RoundToInt((float)(num2 * (6 - (int)spawnableBuildingData.m_Level)) / math.sqrt((float)buildingPropertyData2.m_ResidentialProperties));
-                    
-                    int val1 = consumptionData.m_Upkeep / UrbanInequalityBuildingUpkeepSystem.kUpdatesPerDay;
-                    
-                    int num3 = val1 / UrbanInequalityBuildingUpkeepSystem.kMaterialUpkeep;
-                    int num4 = num1 + (val1 - num3);
-                    
-                    Resource resource1 = random.NextBool() ? Resource.Timber : Resource.Concrete;
-                    
-                    
-                    float marketPrice1 = EconomyUtils.GetMarketPrice(this.m_ResourceDatas[this.m_ResourcePrefabs[resource1]]);
-                    
-                    
-                    float num5 = math.sqrt((float)(buildingData.m_LotSize.x * buildingData.m_LotSize.y * buildingPropertyData1.CountProperties())) * this.m_TemperatureUpkeep / (float)UrbanInequalityBuildingUpkeepSystem.kUpdatesPerDay;
-                    
-                    Entity entity2 = this.m_CommandBuffer.CreateEntity(unfilteredChunkIndex);
-                    GoodsDeliveryRequest goodsDeliveryRequest;
-                    if (random.NextInt(Mathf.RoundToInt(4000f * marketPrice1)) < num3)
-                    {
-                        
-                        ref EntityCommandBuffer.ParallelWriter local = ref this.m_CommandBuffer;
-                        int sortKey = unfilteredChunkIndex;
-                        Entity e = entity2;
-                        goodsDeliveryRequest = new GoodsDeliveryRequest();
-                        goodsDeliveryRequest.m_Amount = Math.Max(val1, 4000);
-                        goodsDeliveryRequest.m_Flags = GoodsDeliveryFlags.BuildingUpkeep | GoodsDeliveryFlags.CommercialAllowed | GoodsDeliveryFlags.IndustrialAllowed | GoodsDeliveryFlags.ImportAllowed;
-                        goodsDeliveryRequest.m_Resource = resource1;
-                        goodsDeliveryRequest.m_Target = entity1;
-                        GoodsDeliveryRequest component = goodsDeliveryRequest;
-                        local.AddComponent<GoodsDeliveryRequest>(sortKey, e, component);
-                    }
-                    Building building = nativeArray4[index1];
-                    
-                    if (this.m_Availabilities.HasBuffer(building.m_RoadEdge))
-                    {
-                        
-                        float availability1 = NetUtils.GetAvailability(this.m_Availabilities[building.m_RoadEdge], AvailableResource.WoodSupply, building.m_CurvePosition);
-                        
-                        float availability2 = NetUtils.GetAvailability(this.m_Availabilities[building.m_RoadEdge], AvailableResource.PetrochemicalsSupply, building.m_CurvePosition);
-                        float max = availability1 + availability2;
-                        Resource resource2;
-                        if ((double)max < 1.0 / 1000.0)
-                        {
-                            resource2 = random.NextBool() ? Resource.Wood : Resource.Petrochemicals;
-                        }
-                        else
-                        {
-                            resource2 = (double)random.NextFloat(max) <= (double)availability1 ? Resource.Wood : Resource.Petrochemicals;
-                            val1 = resource2 == Resource.Wood ? 4000 : 800;
-                        }
-                        
-                        
-                        float marketPrice2 = EconomyUtils.GetMarketPrice(this.m_ResourceDatas[this.m_ResourcePrefabs[resource2]]);
-                        if ((double)random.NextFloat((float)val1 * marketPrice2) < (double)num5)
-                        {
-                            
-                            Entity entity3 = this.m_CommandBuffer.CreateEntity(unfilteredChunkIndex);
-                            int num6 = Mathf.RoundToInt((float)val1 * marketPrice2);
-                            
-                            ref EntityCommandBuffer.ParallelWriter local = ref this.m_CommandBuffer;
-                            int sortKey = unfilteredChunkIndex;
-                            Entity e = entity3;
-                            goodsDeliveryRequest = new GoodsDeliveryRequest();
-                            goodsDeliveryRequest.m_Amount = val1;
-                            goodsDeliveryRequest.m_Flags = GoodsDeliveryFlags.BuildingUpkeep | GoodsDeliveryFlags.CommercialAllowed | GoodsDeliveryFlags.IndustrialAllowed | GoodsDeliveryFlags.ImportAllowed;
-                            goodsDeliveryRequest.m_Resource = resource2;
-                            goodsDeliveryRequest.m_Target = entity1;
-                            GoodsDeliveryRequest component = goodsDeliveryRequest;
-                            local.AddComponent<GoodsDeliveryRequest>(sortKey, e, component);
-                            num4 += num6;
-                        }
-                    }
-                    int num7 = 0;
+
+                    int num4 = num3 / BuildingUpkeepSystem.kMaterialUpkeep;
+                    int num5 = num1 + (num3 - num4);
+                    int num6 = 0;
+
                     for (int index2 = 0; index2 < dynamicBuffer.Length; ++index2)
                     {
                         DynamicBuffer<Game.Economy.Resources> bufferData;
@@ -751,40 +574,40 @@ namespace UrbanInequality.Systems
                             
                             if (this.m_Households.HasComponent(dynamicBuffer[index2].m_Renter))
                             {
-                                num7 += EconomyUtils.GetResources(Resource.Money, bufferData);
+                                num6 += EconomyUtils.GetResources(Resource.Money, bufferData);
                             }
                             else
                             {
-                                
+
                                 if (this.m_OwnedVehicles.HasBuffer(dynamicBuffer[index2].m_Renter))
                                 {
-                                    num7 += EconomyUtils.GetCompanyTotalWorth(bufferData, this.m_OwnedVehicles[dynamicBuffer[index2].m_Renter], this.m_LayoutElements, this.m_DeliveryTrucks, this.m_ResourcePrefabs, this.m_ResourceDatas);
+                                    num6 += EconomyUtils.GetCompanyTotalWorth(bufferData, this.m_OwnedVehicles[dynamicBuffer[index2].m_Renter], ref this.m_LayoutElements, ref this.m_DeliveryTrucks, this.m_ResourcePrefabs, ref this.m_ResourceDatas);
                                 }
                                 else
                                 {
-                                    num7 += EconomyUtils.GetCompanyTotalWorth(bufferData, this.m_ResourcePrefabs, this.m_ResourceDatas);
+                                    num6 += EconomyUtils.GetCompanyTotalWorth(bufferData, this.m_ResourcePrefabs, ref this.m_ResourceDatas);
                                 }
                             }
                         }
                     }
                     BuildingCondition buildingCondition = nativeArray3[index1];
-                    int num8 = 0;
-                    if (num4 > num7)
+                    int num7 = 0;
+                    if (num5 > num6)
                     {
                         
-                        num8 = -this.m_BuildingConfigurationData.m_BuildingConditionDecrement * (int)math.pow(2f, (float)spawnableBuildingData.m_Level) * math.max(1, dynamicBuffer.Length);
+                        num7 = -this.m_BuildingConfigurationData.m_BuildingConditionDecrement * (int)math.pow(2f, (float)spawnableBuildingData.m_Level) * math.max(1, dynamicBuffer.Length);
                     }
                     else if (dynamicBuffer.Length > 0)
                     {
                         
-                        num8 = this.m_BuildingConfigurationData.m_BuildingConditionIncrement * (int)math.pow(2f, (float)spawnableBuildingData.m_Level) * math.max(1, dynamicBuffer.Length);
-                        int num9 = num4 / dynamicBuffer.Length;
+                        num7 = this.m_BuildingConfigurationData.m_BuildingConditionIncrement * (int)math.pow(2f, (float)spawnableBuildingData.m_Level) * math.max(1, dynamicBuffer.Length);
+                        int num8 = num5 / dynamicBuffer.Length;
                         for (int index3 = 0; index3 < dynamicBuffer.Length; ++index3)
                         {
                             this.m_UpkeepExpenseQueue.Enqueue(new UrbanInequalityBuildingUpkeepSystem.UpkeepPayment()
                             {
                                 m_RenterEntity = dynamicBuffer[index3].m_Renter,
-                                m_Price = -num9
+                                m_Price = -num8
                             });
                         }
                     }
@@ -792,7 +615,7 @@ namespace UrbanInequality.Systems
                     if (this.m_DebugFastLeveling)
                         buildingCondition.m_Condition = levelingCost;
                     else
-                        buildingCondition.m_Condition += num8;
+                        buildingCondition.m_Condition += num7;
                     if (buildingCondition.m_Condition >= levelingCost)
                     {
                         
@@ -1169,7 +992,7 @@ namespace UrbanInequality.Systems
                             Game.Prefabs.BuildingData buildingData = nativeArray3[index2];
                             BuildingPropertyData buildingPropertyData1 = nativeArray4[index2];
                             ObjectGeometryData objectGeometryData = nativeArray5[index2];
-                            if (level == (int)spawnableBuildingData.m_Level && lotSize.Equals(buildingData.m_LotSize) && (double)objectGeometryData.m_Size.y <= (double)maxHeight && (buildingData.m_Flags & (Game.Prefabs.BuildingFlags.LeftAccess | Game.Prefabs.BuildingFlags.RightAccess)) == accessFlags && buildingPropertyData.m_ResidentialProperties <= buildingPropertyData1.m_ResidentialProperties && buildingPropertyData.m_AllowedManufactured == buildingPropertyData1.m_AllowedManufactured && buildingPropertyData.m_AllowedSold == buildingPropertyData1.m_AllowedSold && buildingPropertyData.m_AllowedStored == buildingPropertyData1.m_AllowedStored)
+                            if (level == (int)spawnableBuildingData.m_Level && lotSize.Equals(buildingData.m_LotSize) && (double)objectGeometryData.m_Size.y <= (double)maxHeight && (buildingData.m_Flags & (Game.Prefabs.BuildingFlags.LeftAccess | Game.Prefabs.BuildingFlags.RightAccess)) == accessFlags && buildingPropertyData.m_ResidentialProperties <= buildingPropertyData1.m_ResidentialProperties && buildingPropertyData.m_AllowedManufactured == buildingPropertyData1.m_AllowedManufactured && buildingPropertyData.m_AllowedInput == buildingPropertyData1.m_AllowedInput && buildingPropertyData.m_AllowedSold == buildingPropertyData1.m_AllowedSold && buildingPropertyData.m_AllowedStored == buildingPropertyData1.m_AllowedStored)
                             {
                                 int num = 100;
                                 max += num;

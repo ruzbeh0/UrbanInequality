@@ -16,10 +16,11 @@ Urban Inequality transforms the way buildings evolve in your city by introducing
 * Education-Based Progression: Building upgrades now consider the education level of adult and senior residents. Higher education leads to faster growth, while low education holds neighborhoods back.
 * Income-Driven Penalties: Low-income households face harsher conditions for leveling up, mimicking real-world development disparities.
 * City-Wide Level Caps: Set realistic caps on how many buildings can reach each level — for example, only 5–10% of all buildings might become level 5, just like in actual cities.
-* 20 Real City Presets: Select from cities like Tokyo, São Paulo, London, and New York to instantly apply their typical building distribution patterns.
+* Realistic Wage Profiles: Each resident level earns a configurable monthly wage. Choose from real-world city presets where lower levels earn modest incomes and higher levels reflect upper-class wealth — within the game’s scale.
+* 22 Real City Presets: Apply building-level distributions and wage structures modeled after cities like Tokyo, São Paulo, Chicago, Santiago, London, and more — each with realistic inequality baked in.
 * Fully Configurable: Adjust penalty strength and level cap percentages directly from the settings menu.
 
-This mod currently only applies to residential buildings.
+Bulding level upgrade limitations only applies to residential buildings. Also, wage profiles are not set by default, so you can choose the one that fits your city best in the settings menu.
 
 ## Note on Existing Cities
 This mod does not retroactively downgrade or restrict already-upgraded buildings. The new rules apply only to future upgrades that happen after the mod is enabled. For the most immersive experience, it’s best used from the start of a new city.
@@ -33,16 +34,18 @@ This mod does not retroactively downgrade or restrict already-upgraded buildings
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/urban-inequality-mod.1760203/" />
 	<!--Version of the mod-->
-	<ModVersion Value="0.2,1" />
+	<ModVersion Value="0.3" />
 	<!--Recommended version of the base game to use the mod-->
-	<GameVersion Value="1.2.*" />
+	<GameVersion Value="1.3.*" />
 	<!--Dependency for the mod, can be set multiple times-->
 	<Dependency Id="" />
 	<!--Required DLC, can be set multiple times. Supported values are "Landmark Buildings", "San Fransisco Set", "Beach Properties", "Urban Promenades", "Modern Architecture"-->
 	<RequiredDLC Value="" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<ChangeLog>
-* Fixed bugs affecting how cap level limits calculations
+		* Updated for game version 1.3
+		* Added Chicago and Santiago presets
+		* Added option to configure wages 
 	</ChangeLog>
 	<!--External link, can be set multiple times. supported types are "discord", "github", "youtube", "twitch", "x", "paypal", "patreon", "buymeacoffee", "kofi", "crowdin", "gitlab", "gofundme"-->
 	<ExternalLink Type="github" Url="https://github.com/ruzbeh0/UrbanInequality" />
