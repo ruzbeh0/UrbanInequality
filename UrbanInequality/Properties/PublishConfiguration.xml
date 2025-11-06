@@ -20,7 +20,7 @@ Urban Inequality transforms the way buildings evolve in your city by introducing
 * 22 Real City Presets: Apply building-level distributions and wage structures modeled after cities like Tokyo, São Paulo, Chicago, Santiago, London, and more — each with realistic inequality baked in.
 * Fully Configurable: Adjust penalty strength and level cap percentages directly from the settings menu.
 
-Bulding level upgrade limitations only applies to residential buildings. Also, wage profiles are not set by default, so you can choose the one that fits your city best in the settings menu.
+Bulding level upgrade limitations only applies to residential and comercial buildings. Also, wage profiles are not set by default, so you can choose the one that fits your city best in the settings menu.
 
 ## Note on Existing Cities
 This mod does not retroactively downgrade or restrict already-upgraded buildings. The new rules apply only to future upgrades that happen after the mod is enabled. For the most immersive experience, it’s best used from the start of a new city.
@@ -34,7 +34,7 @@ This mod does not retroactively downgrade or restrict already-upgraded buildings
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/urban-inequality-mod.1760203/" />
 	<!--Version of the mod-->
-	<ModVersion Value="0.3" />
+	<ModVersion Value="0.4" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.3.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -43,9 +43,8 @@ This mod does not retroactively downgrade or restrict already-upgraded buildings
 	<RequiredDLC Value="" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<ChangeLog>
-		* Updated for game version 1.3
-		* Added Chicago and Santiago presets
-		* Added option to configure wages 
+* Added commecial buildings to the level cap system.
+* Added factor do increase/decrease the amount of resources needed to upgrade buildings 
 	</ChangeLog>
 	<!--External link, can be set multiple times. supported types are "discord", "github", "youtube", "twitch", "x", "paypal", "patreon", "buymeacoffee", "kofi", "crowdin", "gitlab", "gofundme"-->
 	<ExternalLink Type="github" Url="https://github.com/ruzbeh0/UrbanInequality" />

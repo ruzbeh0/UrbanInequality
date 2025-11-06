@@ -9,7 +9,7 @@ using System.Collections.Generic;
 namespace UrbanInequality
 {
     [FileLocation($"ModsSettings\\{nameof(UrbanInequality)}\\{nameof(UrbanInequality)}")]
-    [SettingsUIGroupOrder(CityGroup, LevelCapGroup, WageGroup, EducationGroup, IncomeGroup)]
+    [SettingsUIGroupOrder(CityGroup, LevelCapGroup, WageGroup, EducationGroup, IncomeGroup, OtherGroup)]
     [SettingsUIShowGroupName(CityGroup, LevelCapGroup, WageGroup, EducationGroup, IncomeGroup)]
     public class Setting : ModSetting
     {
@@ -18,11 +18,13 @@ namespace UrbanInequality
         public const string LevelCapSection = "LevelCapSection";
         public const string WageSection = "WageSection";
         public const string CitySection = "CitySection";
+        public const string OtherSection = "OtherSection";
         public const string IncomeGroup = "IncomeGroup";
         public const string EducationGroup = "EducationGroup";
         public const string LevelCapGroup = "LevelCapGroup";
         public const string WageGroup = "WageGroup";
         public const string CityGroup = "CityGroup";
+        public const string OtherGroup = "OtherGroup";
         public Setting(IMod mod) : base(mod)
         {
 
@@ -36,6 +38,7 @@ namespace UrbanInequality
             maxIncomePenalty = 1.5f;
             maxEducationPenalty = 1.5f;
             selectedCity = CityOption.NewYork;
+            levelUpMaterialFactor = 1.5f;
             ApplyCityCapPreset(selectedCity);
             ApplyCityWagePreset(selectedCity);
         }
@@ -116,6 +119,10 @@ namespace UrbanInequality
         [SettingsUISlider(min = 1000f, max = 8000f, step = 100f)]
         [SettingsUISection(WageSection, WageGroup)]
         public int wageLevel5 { get => _wageLevels[5]; set => _wageLevels[5] = value; }
+
+        [SettingsUISlider(min = 0.25f, max = 5f, step = 0.1f, scalarMultiplier = 1, unit = Unit.kFloatSingleFraction)]
+        [SettingsUISection(OtherSection, OtherGroup)]
+        public float levelUpMaterialFactor { get; set; }
 
         private void SyncUIWithCaps()
         {
@@ -256,6 +263,7 @@ namespace UrbanInequality
                     { m_Setting.GetOptionTabLocaleID(WageSection), "Wage" },
                     { m_Setting.GetOptionTabLocaleID(EducationSection), "Education" },
                     { m_Setting.GetOptionTabLocaleID(LevelCapSection), "Level Cap" },
+                    { m_Setting.GetOptionTabLocaleID(OtherSection), "Other" },
 
                     { m_Setting.GetOptionGroupLocaleID(IncomeGroup), "Income" },
                     { m_Setting.GetOptionGroupLocaleID(EducationGroup), "Education" },
@@ -302,6 +310,9 @@ namespace UrbanInequality
                     
                     { m_Setting.GetOptionLabelLocaleID(nameof(m_Setting.wageLevel5)), "Wage Level 5" },
                     { m_Setting.GetOptionDescLocaleID(nameof(m_Setting.wageLevel5)), "Monthly wage for the highest income residents." },
+
+                    { m_Setting.GetOptionLabelLocaleID(nameof(levelUpMaterialFactor)), "Level-Up Material Factor" },
+                    { m_Setting.GetOptionDescLocaleID(nameof(levelUpMaterialFactor)), "Multiply the amount of materials required to level up." },
 
                 };
 

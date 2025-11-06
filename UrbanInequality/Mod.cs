@@ -44,8 +44,10 @@ namespace UrbanInequality
             // Disable original systems
             World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<Game.Simulation.BuildingUpkeepSystem>().Enabled = false;
 
-            updateSystem.UpdateAt<LevelCapSystem>(SystemUpdatePhase.GameSimulation);
-            updateSystem.UpdateAt<UrbanInequalityBuildingUpkeepSystem>(SystemUpdatePhase.GameSimulation);
+            updateSystem.UpdateAt<ResidentialLevelCapSystem>(SystemUpdatePhase.GameSimulation);
+            updateSystem.UpdateAt<CommercialLevelCapSystem>(SystemUpdatePhase.GameSimulation);
+            updateSystem.UpdateAt<UrbanInequality.Systems.UrbanInequalityBuildingUpkeepSystem>(SystemUpdatePhase.GameSimulation);
+            updateSystem.UpdateAt<EconomyParameterUpdaterSystem>(SystemUpdatePhase.GameSimulation);
         }
 
         public void OnDispose()

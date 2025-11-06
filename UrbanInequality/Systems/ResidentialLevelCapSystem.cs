@@ -17,7 +17,7 @@ using UnityEngine;
 
 namespace UrbanInequality.Systems
 {
-    public partial class LevelCapSystem : GameSystemBase
+    public partial class ResidentialLevelCapSystem : GameSystemBase
     {
         public static float[] MaxLevelPercent = Mod.m_Setting.levelCaps; // Percentages for each level cap, indexed from 1 to 5
 
