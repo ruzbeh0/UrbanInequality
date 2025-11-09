@@ -202,10 +202,7 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
         this.Dependency = jobData1.ScheduleParallel<UrbanInequalityBuildingUpkeepSystem.BuildingUpkeepJob>(this.m_BuildingGroup, this.Dependency);
         this.m_EndFrameBarrier.AddJobHandleForProducer(this.Dependency);
         this.m_ResourceSystem.AddPrefabsReader(this.Dependency);
-        levelCounts.Dispose();
-        maxCounts.Dispose();
-        comLevelCounts.Dispose();
-        comMaxCounts.Dispose();
+        
         UrbanInequalityBuildingUpkeepSystem.ResourceNeedingUpkeepJob jobData2 = new UrbanInequalityBuildingUpkeepSystem.ResourceNeedingUpkeepJob()
         {
             m_ConditionType = InternalCompilerInterface.GetComponentTypeHandle<BuildingCondition>(ref this.__TypeHandle.__Game_Buildings_BuildingCondition_RW_ComponentTypeHandle, ref this.CheckedStateRef),
@@ -215,62 +212,26 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
             m_DeliveryTrucks = InternalCompilerInterface.GetComponentLookup<Game.Vehicles.DeliveryTruck>(ref this.__TypeHandle.__Game_Vehicles_DeliveryTruck_RO_ComponentLookup, ref this.CheckedStateRef),
             m_LeveUpMaterialQueue = this.m_LevelUpMaterialQueue.AsParallelWriter(),
             m_LevelupQueue = this.m_LevelupQueue.AsParallelWriter(),
+            m_Prefabs = InternalCompilerInterface.GetComponentLookup<PrefabRef>(ref this.__TypeHandle.__Game_Prefabs_PrefabRef_RO_ComponentLookup, ref this.CheckedStateRef),
+            m_Spawnables = InternalCompilerInterface.GetComponentLookup<SpawnableBuildingData>(ref this.__TypeHandle.__Game_Prefabs_SpawnableBuildingData_RO_ComponentLookup, ref this.CheckedStateRef),
+            m_Zones = InternalCompilerInterface.GetComponentLookup<ZoneData>(ref this.__TypeHandle.__Game_Prefabs_ZoneData_RO_ComponentLookup, ref this.CheckedStateRef),
+            m_LevelCounts = levelCounts,
+            m_MaxLevelCounts = maxCounts,
             m_CommandBuffer = this.m_EndFrameBarrier.CreateCommandBuffer().AsParallelWriter()
         };
         // ISSUE: reference to a compiler-generated field
         this.Dependency = jobData2.ScheduleParallel<UrbanInequalityBuildingUpkeepSystem.ResourceNeedingUpkeepJob>(this.m_ResourceNeedingBuildingGroup, this.Dependency);
         // ISSUE: reference to a compiler-generated field
         this.m_EndFrameBarrier.AddJobHandleForProducer(this.Dependency);
+        levelCounts.Dispose();
+        maxCounts.Dispose();
+        comLevelCounts.Dispose();
+        comMaxCounts.Dispose();
+
         JobHandle outJobHandle;
         JobHandle dependencies;
         JobHandle deps1;
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated method
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated method
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated method
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated method
-        // ISSUE: object of a compiler-generated type is created
-        // ISSUE: variable of a compiler-generated type
+
         UrbanInequalityBuildingUpkeepSystem.LevelupJob jobData3 = new UrbanInequalityBuildingUpkeepSystem.LevelupJob()
         {
             m_EntityType = InternalCompilerInterface.GetEntityTypeHandle(ref this.__TypeHandle.__Unity_Entities_Entity_TypeHandle, ref this.CheckedStateRef),
@@ -887,6 +848,11 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
         public NativeQueue<Entity>.ParallelWriter m_LevelupQueue;
         public NativeQueue<UrbanInequalityBuildingUpkeepSystem.LevelUpMaterial>.ParallelWriter m_LeveUpMaterialQueue;
         public EntityCommandBuffer.ParallelWriter m_CommandBuffer;
+        [ReadOnly] public ComponentLookup<PrefabRef> m_Prefabs;
+        [ReadOnly] public ComponentLookup<SpawnableBuildingData> m_Spawnables;
+        [ReadOnly] public ComponentLookup<ZoneData> m_Zones;
+        [ReadOnly] public NativeArray<int> m_LevelCounts;
+        [ReadOnly] public NativeArray<int> m_MaxLevelCounts;
 
         public void Execute(
           in ArchetypeChunk chunk,
@@ -894,16 +860,40 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
           bool useEnabledMask,
           in v128 chunkEnabledMask)
         {
-            // ISSUE: reference to a compiler-generated field
             NativeArray<Entity> nativeArray1 = chunk.GetNativeArray(this.m_EntityType);
-            // ISSUE: reference to a compiler-generated field
             BufferAccessor<ResourceNeeding> bufferAccessor = chunk.GetBufferAccessor<ResourceNeeding>(ref this.m_ResourceNeedingType);
-            // ISSUE: reference to a compiler-generated field
             NativeArray<BuildingCondition> nativeArray2 = chunk.GetNativeArray<BuildingCondition>(ref this.m_ConditionType);
             for (int index1 = 0; index1 < chunk.Count; ++index1)
             {
                 Entity entity = nativeArray1[index1];
-                // ISSUE: reference to a compiler-generated field
+
+                if (m_Prefabs.HasComponent(entity))
+                {
+                    var prefab = m_Prefabs[entity].m_Prefab;
+                    if (m_Spawnables.HasComponent(prefab))
+                    {
+                        var spawn = m_Spawnables[prefab];
+                        var zone = m_Zones[spawn.m_ZonePrefab];
+
+                        if (zone.m_AreaType == AreaType.Residential || zone.m_AreaType == AreaType.Commercial) 
+                        {
+                            int current = math.clamp((int)spawn.m_Level, 1, 5);
+                            int target = math.clamp(current + 1, 1, 5);
+
+                            bool haveSlots = m_MaxLevelCounts.Length > target && m_LevelCounts.Length > target;
+                            bool atCap = haveSlots && m_MaxLevelCounts[target] > 0 &&
+                                         m_LevelCounts[target] >= m_MaxLevelCounts[target];
+
+                            if (atCap)
+                            {
+                                // stop future requests: drop ResourceNeeding
+                                m_CommandBuffer.RemoveComponent<ResourceNeeding>(unfilteredChunkIndex, entity);
+                                continue; // skip the rest; we’ve cancelled the upgrade deliveries
+                            }
+                        }
+                    }
+                }
+
                 if (this.m_GuestVehicleBufs.HasBuffer(entity))
                 {
                     DynamicBuffer<ResourceNeeding> dynamicBuffer = bufferAccessor[index1];

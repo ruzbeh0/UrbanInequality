@@ -34,7 +34,7 @@ This mod does not retroactively downgrade or restrict already-upgraded buildings
 	<!--Link to the forum post where the mod can be discussed-->
 	<ForumLink Value="https://forum.paradoxplaza.com/forum/threads/urban-inequality-mod.1760203/" />
 	<!--Version of the mod-->
-	<ModVersion Value="0.4" />
+	<ModVersion Value="0.4.1" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.3.*" />
 	<!--Dependency for the mod, can be set multiple times-->
@@ -43,8 +43,7 @@ This mod does not retroactively downgrade or restrict already-upgraded buildings
 	<RequiredDLC Value="" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<ChangeLog>
-* Added commecial buildings to the level cap system.
-* Added factor do increase/decrease the amount of resources needed to upgrade buildings 
+* Fixed bugs causing infinite resource requests for buildings trying to level up
 	</ChangeLog>
 	<!--External link, can be set multiple times. supported types are "discord", "github", "youtube", "twitch", "x", "paypal", "patreon", "buymeacoffee", "kofi", "crowdin", "gitlab", "gofundme"-->
 	<ExternalLink Type="github" Url="https://github.com/ruzbeh0/UrbanInequality" />
