@@ -2,20 +2,22 @@
 using Colossal.Collections;
 using Colossal.Entities;
 using Colossal.Mathematics;
+using Game;
 using Game.Buildings;
 using Game.Citizens;
 using Game.City;
 using Game.Common;
+using Game.Companies;
 using Game.Economy;
 using Game.Net;
 using Game.Notifications;
 using Game.Objects;
 using Game.Prefabs;
+using Game.Simulation;
 using Game.Tools;
 using Game.Triggers;
 using Game.Vehicles;
 using Game.Zones;
-using Game.Simulation;
 using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Burst.Intrinsics;
@@ -25,7 +27,7 @@ using Unity.Entities.Internal;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UrbanInequality.Systems;
-using Game;
+using static Colossal.IO.AssetDatabase.AtlasFrame;
 
 #nullable disable
 namespace UrbanInequality.Systems;
@@ -55,6 +57,7 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
     private EntityQuery m_BuildingSettingsQuery;
     private EntityQuery m_BuildingGroup;
     private EntityQuery m_ResourceNeedingBuildingGroup;
+    private EntityArchetype m_GoodsDeliveryRequestArchetype;
     public bool debugFastLeveling;
     private ResidentialLevelCapSystem m_ResidentialLevelCapSystem;
     private CommercialLevelCapSystem m_CommercialLevelCapSystem;
@@ -130,6 +133,7 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
         });
 
         this.m_BuildingPrefabGroup = this.GetEntityQuery(ComponentType.ReadOnly<Game.Prefabs.BuildingData>(), ComponentType.ReadOnly<BuildingSpawnGroupData>(), ComponentType.ReadOnly<PrefabData>());
+        this.m_GoodsDeliveryRequestArchetype = this.EntityManager.CreateArchetype(ComponentType.ReadWrite<ServiceRequest>(), ComponentType.ReadWrite<GoodsDeliveryRequest>(), ComponentType.ReadWrite<RequestGroup>());
         this.RequireForUpdate(this.m_BuildingGroup);
         this.RequireForUpdate(this.m_BuildingSettingsQuery);
     }
@@ -175,6 +179,9 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
             m_OwnedVehicles = InternalCompilerInterface.GetBufferLookup<OwnedVehicle>(ref this.__TypeHandle.__Game_Vehicles_OwnedVehicle_RO_BufferLookup, ref this.CheckedStateRef),
             m_LayoutElements = InternalCompilerInterface.GetBufferLookup<LayoutElement>(ref this.__TypeHandle.__Game_Vehicles_LayoutElement_RO_BufferLookup, ref this.CheckedStateRef),
             m_DeliveryTrucks = InternalCompilerInterface.GetComponentLookup<Game.Vehicles.DeliveryTruck>(ref this.__TypeHandle.__Game_Vehicles_DeliveryTruck_RO_ComponentLookup, ref this.CheckedStateRef),
+            m_PrefabRefs = InternalCompilerInterface.GetComponentLookup<PrefabRef>(ref this.__TypeHandle.__Game_Prefabs_PrefabRef_RO_ComponentLookup, ref this.CheckedStateRef),
+            m_IndustrialProcessDatas = InternalCompilerInterface.GetComponentLookup<IndustrialProcessData>(ref this.__TypeHandle.__Game_Prefabs_IndustrialProcessData_RO_ComponentLookup, ref this.CheckedStateRef),
+            m_ServiceAvailables = InternalCompilerInterface.GetComponentLookup<ServiceAvailable>(ref this.__TypeHandle.__Game_Companies_ServiceAvailable_RO_ComponentLookup, ref this.CheckedStateRef),
             m_City = this.m_CitySystem.City,
             m_ResourcePrefabs = this.m_ResourceSystem.GetPrefabs(),
             m_ResourceDatas = InternalCompilerInterface.GetComponentLookup<ResourceData>(ref this.__TypeHandle.__Game_Prefabs_ResourceData_RO_ComponentLookup, ref this.CheckedStateRef),
@@ -186,9 +193,11 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
             m_BuildingConfigLevelResourceBuf = this.m_BuildingSettingsQuery.GetSingletonBuffer<ZoneLevelUpResourceData>(true),
             m_TemperatureUpkeep = UrbanInequalityBuildingUpkeepSystem.GetHeatingMultiplier((float)this.m_ClimateSystem.temperature),
             m_DebugFastLeveling = this.debugFastLeveling,
+            m_GoodsDeliveryRequestArchetype = this.m_GoodsDeliveryRequestArchetype,
             m_UpkeepExpenseQueue = this.m_UpkeepExpenseQueue.AsParallelWriter(),
             m_LevelDownQueue = this.m_LeveldownQueue.AsParallelWriter(),
             m_CommandBuffer = this.m_EndFrameBarrier.CreateCommandBuffer().AsParallelWriter(),
+            m_IconCommandBuffer = this.m_IconCommandSystem.CreateCommandBuffer(),
             m_LevelCounts = levelCounts,
             m_MaxLevelCounts = maxCounts,
             m_ComLevelCounts = comLevelCounts,
@@ -201,15 +210,16 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
         };
         this.Dependency = jobData1.ScheduleParallel<UrbanInequalityBuildingUpkeepSystem.BuildingUpkeepJob>(this.m_BuildingGroup, this.Dependency);
         this.m_EndFrameBarrier.AddJobHandleForProducer(this.Dependency);
+        this.m_IconCommandSystem.AddCommandBufferWriter(this.Dependency);
         this.m_ResourceSystem.AddPrefabsReader(this.Dependency);
-        
+
         UrbanInequalityBuildingUpkeepSystem.ResourceNeedingUpkeepJob jobData2 = new UrbanInequalityBuildingUpkeepSystem.ResourceNeedingUpkeepJob()
         {
             m_ConditionType = InternalCompilerInterface.GetComponentTypeHandle<BuildingCondition>(ref this.__TypeHandle.__Game_Buildings_BuildingCondition_RW_ComponentTypeHandle, ref this.CheckedStateRef),
             m_EntityType = InternalCompilerInterface.GetEntityTypeHandle(ref this.__TypeHandle.__Unity_Entities_Entity_TypeHandle, ref this.CheckedStateRef),
             m_ResourceNeedingType = InternalCompilerInterface.GetBufferTypeHandle<ResourceNeeding>(ref this.__TypeHandle.__Game_Buildings_ResourceNeeding_RW_BufferTypeHandle, ref this.CheckedStateRef),
             m_GuestVehicleBufs = InternalCompilerInterface.GetBufferLookup<GuestVehicle>(ref this.__TypeHandle.__Game_Vehicles_GuestVehicle_RO_BufferLookup, ref this.CheckedStateRef),
-            m_DeliveryTrucks = InternalCompilerInterface.GetComponentLookup<Game.Vehicles.DeliveryTruck>(ref this.__TypeHandle.__Game_Vehicles_DeliveryTruck_RO_ComponentLookup, ref this.CheckedStateRef),
+            m_BuildingConfigurationData = singleton,
             m_LeveUpMaterialQueue = this.m_LevelUpMaterialQueue.AsParallelWriter(),
             m_LevelupQueue = this.m_LevelupQueue.AsParallelWriter(),
             m_Prefabs = InternalCompilerInterface.GetComponentLookup<PrefabRef>(ref this.__TypeHandle.__Game_Prefabs_PrefabRef_RO_ComponentLookup, ref this.CheckedStateRef),
@@ -217,7 +227,10 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
             m_Zones = InternalCompilerInterface.GetComponentLookup<ZoneData>(ref this.__TypeHandle.__Game_Prefabs_ZoneData_RO_ComponentLookup, ref this.CheckedStateRef),
             m_LevelCounts = levelCounts,
             m_MaxLevelCounts = maxCounts,
-            m_CommandBuffer = this.m_EndFrameBarrier.CreateCommandBuffer().AsParallelWriter()
+            m_ComLevelCounts = comLevelCounts,
+            m_ComMaxLevelCounts = comMaxCounts,
+            m_CommandBuffer = this.m_EndFrameBarrier.CreateCommandBuffer().AsParallelWriter(),
+            m_IconCommandBuffer = this.m_IconCommandSystem.CreateCommandBuffer()
         };
         // ISSUE: reference to a compiler-generated field
         this.Dependency = jobData2.ScheduleParallel<UrbanInequalityBuildingUpkeepSystem.ResourceNeedingUpkeepJob>(this.m_ResourceNeedingBuildingGroup, this.Dependency);
@@ -275,43 +288,7 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
         this.m_TriggerSystem.AddActionBufferWriter(this.Dependency);
         JobHandle deps2;
         JobHandle deps3;
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated method
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated method
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated method
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated method
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: object of a compiler-generated type is created
-        // ISSUE: variable of a compiler-generated type
+
         UrbanInequalityBuildingUpkeepSystem.LeveldownJob jobData4 = new UrbanInequalityBuildingUpkeepSystem.LeveldownJob()
         {
             m_BuildingDatas = InternalCompilerInterface.GetComponentLookup<Game.Prefabs.BuildingData>(ref this.__TypeHandle.__Game_Prefabs_BuildingData_RO_ComponentLookup, ref this.CheckedStateRef),
@@ -336,28 +313,16 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
             m_SimulationFrame = this.m_SimulationSystem.frameIndex
         };
         this.Dependency = jobData4.Schedule<UrbanInequalityBuildingUpkeepSystem.LeveldownJob>(JobHandle.CombineDependencies(this.Dependency, deps2, deps3));
-        // ISSUE: reference to a compiler-generated field
         this.m_EndFrameBarrier.AddJobHandleForProducer(this.Dependency);
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated method
         this.m_ElectricityRoadConnectionGraphSystem.AddQueueWriter(this.Dependency);
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated method
         this.m_IconCommandSystem.AddCommandBufferWriter(this.Dependency);
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated method
         this.m_TriggerSystem.AddActionBufferWriter(this.Dependency);
         JobHandle deps4;
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: reference to a compiler-generated field
-        // ISSUE: object of a compiler-generated type is created
-        // ISSUE: variable of a compiler-generated type
+
         UrbanInequalityBuildingUpkeepSystem.UpkeepPaymentJob jobData5 = new UrbanInequalityBuildingUpkeepSystem.UpkeepPaymentJob()
         {
             m_Resources = InternalCompilerInterface.GetBufferLookup<Resources>(ref this.__TypeHandle.__Game_Economy_Resources_RW_BufferLookup, ref this.CheckedStateRef),
+            m_Households = InternalCompilerInterface.GetComponentLookup<Household>(ref this.__TypeHandle.__Game_Citizens_Household_RW_ComponentLookup, ref this.CheckedStateRef),
             m_UpkeepExpenseQueue = this.m_UpkeepExpenseQueue,
             m_LevelUpMaterialQueue = this.m_LevelUpMaterialQueue,
             m_UpkeepMaterialAccumulator = this.m_CityProductionStatisticSystem.GetCityResourceUsageAccumulator(CityProductionStatisticSystem.CityResourceUsage.Consumer.LevelUp, out deps4)
@@ -489,6 +454,12 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
         [ReadOnly]
         public ComponentLookup<Game.Vehicles.DeliveryTruck> m_DeliveryTrucks;
         [ReadOnly]
+        public ComponentLookup<PrefabRef> m_PrefabRefs;
+        [ReadOnly]
+        public ComponentLookup<IndustrialProcessData> m_IndustrialProcessDatas;
+        [ReadOnly]
+        public ComponentLookup<ServiceAvailable> m_ServiceAvailables;
+        [ReadOnly]
         public BuildingConfigurationData m_BuildingConfigurationData;
         [ReadOnly]
         public DynamicBuffer<ZoneLevelUpResourceData> m_BuildingConfigLevelResourceBuf;
@@ -498,6 +469,8 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
         public BufferLookup<ResourceAvailability> m_Availabilities;
         [ReadOnly]
         public Entity m_City;
+        [ReadOnly]
+        public EntityArchetype m_GoodsDeliveryRequestArchetype;
         [ReadOnly] public float m_LevelupMaterialFactor;
         public float m_TemperatureUpkeep;
         public bool m_DebugFastLeveling;
@@ -523,7 +496,34 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
 
         // NEW: for probabilistic gate
         [ReadOnly] public uint m_FrameIndex;
+        public IconCommandBuffer m_IconCommandBuffer;
 
+        private void RequestResourceDelivery(
+          int jobIndex,
+          Entity entity,
+          DynamicBuffer<ResourceNeeding> resourceNeedings,
+          Resource resource,
+          int amount)
+        {
+            resourceNeedings.Add(new ResourceNeeding()
+            {
+                m_Resource = resource,
+                m_Amount = amount,
+                m_Flags = ResourceNeedingFlags.Requested
+            });
+            Entity entity1 = this.m_CommandBuffer.CreateEntity(jobIndex, this.m_GoodsDeliveryRequestArchetype);
+
+            this.m_CommandBuffer.SetComponent<GoodsDeliveryRequest>(jobIndex, entity1, new GoodsDeliveryRequest()
+            {
+                m_ResourceNeeder = entity,
+                m_Amount = amount,
+                m_Resource = resource
+            });
+
+            this.m_CommandBuffer.SetComponent<RequestGroup>(jobIndex, entity1, new RequestGroup(32U /*0x20*/));
+
+            this.m_IconCommandBuffer.Add(entity, this.m_BuildingConfigurationData.m_LevelingBuildingNotificationPrefab);
+        }
 
 
         public void Execute(
@@ -538,83 +538,71 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
             BufferAccessor<Renter> bufferAccessor = chunk.GetBufferAccessor<Renter>(ref this.m_RenterType);
             for (int index1 = 0; index1 < chunk.Count; ++index1)
             {
-                Entity e = nativeArray1[index1];
+                Entity entity = nativeArray1[index1];
                 BuildingCondition buildingCondition = nativeArray2[index1];
-                DynamicBuffer<Renter> dynamicBuffer1 = bufferAccessor[index1];
+                DynamicBuffer<Renter> dynamicBuffer = bufferAccessor[index1];
                 Entity prefab = nativeArray3[index1].m_Prefab;
-                // ISSUE: reference to a compiler-generated field
+
                 ConsumptionData consumptionData = this.m_ConsumptionDatas[prefab];
-                // ISSUE: reference to a compiler-generated field
-                // ISSUE: reference to a compiler-generated field
                 DynamicBuffer<CityModifier> cityModifierBuf = this.m_CityModifierBufs[this.m_City];
-                // ISSUE: reference to a compiler-generated field
                 SpawnableBuildingData spawnableBuildingData = this.m_SpawnableBuildingDatas[prefab];
-                // ISSUE: reference to a compiler-generated field
                 AreaType areaType = this.m_ZoneDatas[spawnableBuildingData.m_ZonePrefab].m_AreaType;
-                // ISSUE: reference to a compiler-generated field
                 BuildingPropertyData buildingPropertyData = this.m_BuildingPropertyDatas[prefab];
                 int levelingCost = BuildingUtils.GetLevelingCost(areaType, buildingPropertyData, (int)spawnableBuildingData.m_Level, cityModifierBuf);
                 int abandonCost = BuildingUtils.GetAbandonCost(areaType, buildingPropertyData, (int)spawnableBuildingData.m_Level, levelingCost, cityModifierBuf);
-                // ISSUE: reference to a compiler-generated field
                 int num1 = consumptionData.m_Upkeep / UrbanInequalityBuildingUpkeepSystem.kUpdatesPerDay;
-                // ISSUE: reference to a compiler-generated field
                 int num2 = num1 - num1 / UrbanInequalityBuildingUpkeepSystem.kMaterialUpkeep;
                 int num3 = 0;
-                for (int index2 = 0; index2 < dynamicBuffer1.Length; ++index2)
+                for (int index2 = 0; index2 < dynamicBuffer.Length; ++index2)
                 {
                     DynamicBuffer<Resources> bufferData;
-                    // ISSUE: reference to a compiler-generated field
-                    if (this.m_Resources.TryGetBuffer(dynamicBuffer1[index2].m_Renter, out bufferData))
+                    if (this.m_Resources.TryGetBuffer(dynamicBuffer[index2].m_Renter, out bufferData))
                     {
-                        // ISSUE: reference to a compiler-generated field
-                        if (this.m_Households.HasComponent(dynamicBuffer1[index2].m_Renter))
+                        if (this.m_Households.HasComponent(dynamicBuffer[index2].m_Renter))
                         {
                             num3 += EconomyUtils.GetResources(Resource.Money, bufferData);
                         }
                         else
                         {
-                            // ISSUE: reference to a compiler-generated field
-                            if (this.m_OwnedVehicles.HasBuffer(dynamicBuffer1[index2].m_Renter))
+                            Entity renter = dynamicBuffer[index2].m_Renter;
+                            bool isIndustrial = !this.m_ServiceAvailables.HasComponent(renter);
+                            IndustrialProcessData componentData1 = new IndustrialProcessData();
+                            PrefabRef componentData2;
+
+                            if (this.m_PrefabRefs.TryGetComponent(renter, out componentData2))
                             {
-                                // ISSUE: reference to a compiler-generated field
-                                // ISSUE: reference to a compiler-generated field
-                                // ISSUE: reference to a compiler-generated field
-                                // ISSUE: reference to a compiler-generated field
-                                // ISSUE: reference to a compiler-generated field
-                                num3 += EconomyUtils.GetCompanyTotalWorth(bufferData, this.m_OwnedVehicles[dynamicBuffer1[index2].m_Renter], ref this.m_LayoutElements, ref this.m_DeliveryTrucks, this.m_ResourcePrefabs, ref this.m_ResourceDatas);
+                                this.m_IndustrialProcessDatas.TryGetComponent(componentData2.m_Prefab, out componentData1);
+                            }
+                            if (this.m_OwnedVehicles.HasBuffer(dynamicBuffer[index2].m_Renter))
+                            {
+                                num3 += EconomyUtils.GetCompanyTotalWorth(isIndustrial, componentData1, bufferData, this.m_OwnedVehicles[dynamicBuffer[index2].m_Renter], ref this.m_LayoutElements, ref this.m_DeliveryTrucks, this.m_ResourcePrefabs, ref this.m_ResourceDatas);
                             }
                             else
                             {
-                                // ISSUE: reference to a compiler-generated field
-                                // ISSUE: reference to a compiler-generated field
-                                num3 += EconomyUtils.GetCompanyTotalWorth(bufferData, this.m_ResourcePrefabs, ref this.m_ResourceDatas);
+                                num3 += EconomyUtils.GetCompanyTotalWorth(isIndustrial, componentData1, bufferData, this.m_ResourcePrefabs, ref this.m_ResourceDatas);
                             }
                         }
+
                     }
                 }
                 int num4 = 0;
                 if (num2 > num3)
                 {
-                    // ISSUE: reference to a compiler-generated field
-                    num4 = -this.m_BuildingConfigurationData.m_BuildingConditionDecrement * (int)math.pow(2f, (float)spawnableBuildingData.m_Level) * math.max(1, dynamicBuffer1.Length);
+                    num4 = -this.m_BuildingConfigurationData.m_BuildingConditionDecrement * (int)math.pow(2f, (float)spawnableBuildingData.m_Level) * math.max(1, dynamicBuffer.Length);
                 }
-                else if (dynamicBuffer1.Length > 0)
+                else if (dynamicBuffer.Length > 0)
                 {
-                    // ISSUE: reference to a compiler-generated field
-                    num4 = BuildingUtils.GetBuildingConditionChange(areaType, this.m_BuildingConfigurationData) * (int)math.pow(2f, (float)spawnableBuildingData.m_Level) * math.max(1, dynamicBuffer1.Length);
-                    int num5 = num2 / dynamicBuffer1.Length;
-                    for (int index3 = 0; index3 < dynamicBuffer1.Length; ++index3)
+                    num4 = BuildingUtils.GetBuildingConditionChange(areaType, this.m_BuildingConfigurationData) * (int)math.pow(2f, (float)spawnableBuildingData.m_Level) * math.max(1, dynamicBuffer.Length);
+                    int num5 = num2 / dynamicBuffer.Length;
+                    for (int index3 = 0; index3 < dynamicBuffer.Length; ++index3)
                     {
-                        // ISSUE: reference to a compiler-generated field
-                        // ISSUE: object of a compiler-generated type is created
                         this.m_UpkeepExpenseQueue.Enqueue(new UrbanInequalityBuildingUpkeepSystem.UpkeepPayment()
                         {
-                            m_RenterEntity = dynamicBuffer1[index3].m_Renter,
+                            m_RenterEntity = dynamicBuffer[index3].m_Renter,
                             m_Price = -num5
                         });
                     }
                 }
-                // ISSUE: reference to a compiler-generated field
                 if (this.m_DebugFastLeveling)
                     buildingCondition.m_Condition = levelingCost;
                 else
@@ -652,7 +640,7 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
                 // call helper
                 bool allowLevel;
                 int adjustedLevelingCost = ApplyPenaltiesAndGates(
-                    e, /* building entity */
+                    entity, /* building entity */
                     spawnableBuildingData,
                     this.m_ZoneDatas[spawnableBuildingData.m_ZonePrefab],
                     levelingCost,
@@ -662,63 +650,36 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
 
                 if (allowLevel && buildingCondition.m_Condition >= adjustedLevelingCost)
                 {
-                    // ISSUE: reference to a compiler-generated field
-                    DynamicBuffer<ResourceNeeding> dynamicBuffer2 = this.m_CommandBuffer.AddBuffer<ResourceNeeding>(unfilteredChunkIndex, e);
-                    // ISSUE: reference to a compiler-generated field
-                    this.m_CommandBuffer.AddBuffer<GuestVehicle>(unfilteredChunkIndex, e);
+                    DynamicBuffer<ResourceNeeding> resourceNeedings = this.m_CommandBuffer.AddBuffer<ResourceNeeding>(unfilteredChunkIndex, entity);
+                    this.m_CommandBuffer.AddBuffer<GuestVehicle>(unfilteredChunkIndex, entity);
                     DynamicBuffer<LevelUpResourceData> bufferData1;
-                    ResourceNeeding resourceNeeding;
-                    // ISSUE: reference to a compiler-generated field
                     if (this.m_LevelUpResourceDataBufs.TryGetBuffer(prefab, out bufferData1) && bufferData1.Length > 0)
                     {
                         for (int index4 = 0; index4 < bufferData1.Length; ++index4)
                         {
-                            ref DynamicBuffer<ResourceNeeding> local = ref dynamicBuffer2;
-                            resourceNeeding = new ResourceNeeding();
-                            resourceNeeding.m_Resource = bufferData1[index4].m_LevelUpResource.m_Resource;
-                            resourceNeeding.m_Amount = (int)(bufferData1[index4].m_LevelUpResource.m_Amount * m_LevelupMaterialFactor);
-                            resourceNeeding.m_Flags = ResourceNeedingFlags.None;
-                            ResourceNeeding elem = resourceNeeding;
-                            local.Add(elem);
+                            this.RequestResourceDelivery(unfilteredChunkIndex, entity, resourceNeedings, bufferData1[index4].m_LevelUpResource.m_Resource, bufferData1[index4].m_LevelUpResource.m_Amount);
                         }
                     }
                     else
                     {
                         DynamicBuffer<ZoneLevelUpResourceData> bufferData2;
-                        // ISSUE: reference to a compiler-generated field
                         if (this.m_ZoneLevelUpResourceDataBufs.TryGetBuffer(spawnableBuildingData.m_ZonePrefab, out bufferData2) && bufferData2.Length > 0)
                         {
                             for (int index5 = 0; index5 < bufferData2.Length; ++index5)
                             {
                                 if (bufferData2[index5].m_Level == (int)spawnableBuildingData.m_Level)
                                 {
-                                    ref DynamicBuffer<ResourceNeeding> local = ref dynamicBuffer2;
-                                    resourceNeeding = new ResourceNeeding();
-                                    resourceNeeding.m_Resource = bufferData2[index5].m_LevelUpResource.m_Resource;
-                                    resourceNeeding.m_Amount = (int)(bufferData2[index5].m_LevelUpResource.m_Amount * m_LevelupMaterialFactor);
-                                    resourceNeeding.m_Flags = ResourceNeedingFlags.None;
-                                    ResourceNeeding elem = resourceNeeding;
-                                    local.Add(elem);
+                                    this.RequestResourceDelivery(unfilteredChunkIndex, entity, resourceNeedings, bufferData2[index5].m_LevelUpResource.m_Resource, bufferData2[index5].m_LevelUpResource.m_Amount);
                                 }
                             }
                         }
                         else
                         {
-                            // ISSUE: reference to a compiler-generated field
                             for (int index6 = 0; index6 < this.m_BuildingConfigLevelResourceBuf.Length; ++index6)
                             {
-                                // ISSUE: reference to a compiler-generated field
                                 if (this.m_BuildingConfigLevelResourceBuf[index6].m_Level == (int)spawnableBuildingData.m_Level)
                                 {
-                                    ref DynamicBuffer<ResourceNeeding> local = ref dynamicBuffer2;
-                                    resourceNeeding = new ResourceNeeding();
-                                    // ISSUE: reference to a compiler-generated field
-                                    resourceNeeding.m_Resource = this.m_BuildingConfigLevelResourceBuf[index6].m_LevelUpResource.m_Resource;
-                                    // ISSUE: reference to a compiler-generated field
-                                    resourceNeeding.m_Amount = (int)(this.m_BuildingConfigLevelResourceBuf[index6].m_LevelUpResource.m_Amount * m_LevelupMaterialFactor);
-                                    resourceNeeding.m_Flags = ResourceNeedingFlags.None;
-                                    ResourceNeeding elem = resourceNeeding;
-                                    local.Add(elem);
+                                    this.RequestResourceDelivery(unfilteredChunkIndex, entity, resourceNeedings, this.m_BuildingConfigLevelResourceBuf[index6].m_LevelUpResource.m_Resource, this.m_BuildingConfigLevelResourceBuf[index6].m_LevelUpResource.m_Amount);
                                 }
                             }
                         }
@@ -726,12 +687,8 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
                 }
                 else
                 {
-                    // ISSUE: reference to a compiler-generated field
-                    // ISSUE: reference to a compiler-generated field
-                    // ISSUE: reference to a compiler-generated field
                     if ((this.m_Abandoned.HasComponent(nativeArray1[index1]) ? 0 : (!this.m_Destroyed.HasComponent(nativeArray1[index1]) ? 1 : 0)) != 0 && nativeArray2[index1].m_Condition <= -abandonCost && !this.m_SignatureDatas.HasComponent(prefab))
                     {
-                        // ISSUE: reference to a compiler-generated field
                         this.m_LevelDownQueue.Enqueue(nativeArray1[index1]);
                         buildingCondition.m_Condition += levelingCost;
                     }
@@ -740,7 +697,6 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
             }
         }
 
-        // NEW
         private int ApplyPenaltiesAndGates(
             Entity building,
             in SpawnableBuildingData spawnable,
@@ -812,7 +768,6 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
             return adjusted;
         }
 
-        // NEW (same as Urban): money proxy from household resources
         private static int GetHouseholdIncomeProxy(Entity household, BufferLookup<Game.Economy.Resources> resources)
         {
             if (!resources.HasBuffer(household)) return 0;
@@ -845,136 +800,205 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
         public BufferLookup<GuestVehicle> m_GuestVehicleBufs;
         [ReadOnly]
         public ComponentLookup<Game.Vehicles.DeliveryTruck> m_DeliveryTrucks;
+        [ReadOnly]
+        public BuildingConfigurationData m_BuildingConfigurationData;
         public NativeQueue<Entity>.ParallelWriter m_LevelupQueue;
         public NativeQueue<UrbanInequalityBuildingUpkeepSystem.LevelUpMaterial>.ParallelWriter m_LeveUpMaterialQueue;
         public EntityCommandBuffer.ParallelWriter m_CommandBuffer;
+        public IconCommandBuffer m_IconCommandBuffer;
         [ReadOnly] public ComponentLookup<PrefabRef> m_Prefabs;
         [ReadOnly] public ComponentLookup<SpawnableBuildingData> m_Spawnables;
         [ReadOnly] public ComponentLookup<ZoneData> m_Zones;
         [ReadOnly] public NativeArray<int> m_LevelCounts;
         [ReadOnly] public NativeArray<int> m_MaxLevelCounts;
+        [ReadOnly] public NativeArray<int> m_ComLevelCounts;
+        [ReadOnly] public NativeArray<int> m_ComMaxLevelCounts;
 
         public void Execute(
-          in ArchetypeChunk chunk,
-          int unfilteredChunkIndex,
-          bool useEnabledMask,
-          in v128 chunkEnabledMask)
+    in ArchetypeChunk chunk,
+    int unfilteredChunkIndex,
+    bool useEnabledMask,
+    in v128 chunkEnabledMask)
         {
-            NativeArray<Entity> nativeArray1 = chunk.GetNativeArray(this.m_EntityType);
-            BufferAccessor<ResourceNeeding> bufferAccessor = chunk.GetBufferAccessor<ResourceNeeding>(ref this.m_ResourceNeedingType);
-            NativeArray<BuildingCondition> nativeArray2 = chunk.GetNativeArray<BuildingCondition>(ref this.m_ConditionType);
-            for (int index1 = 0; index1 < chunk.Count; ++index1)
-            {
-                Entity entity = nativeArray1[index1];
+            NativeArray<Entity> entities = chunk.GetNativeArray(this.m_EntityType);
+            BufferAccessor<ResourceNeeding> resAcc = chunk.GetBufferAccessor<ResourceNeeding>(ref this.m_ResourceNeedingType);
+            NativeArray<BuildingCondition> conditions = chunk.GetNativeArray<BuildingCondition>(ref this.m_ConditionType);
 
-                if (m_Prefabs.HasComponent(entity))
+            for (int ci = 0; ci < chunk.Count; ci++)
+            {
+                Entity building = entities[ci];
+                DynamicBuffer<ResourceNeeding> needings = resAcc[ci];
+
+                // --- 1) Figure out zone type and whether Res/Com logic applies ---
+                bool isResOrCom = false;
+                AreaType areaType = AreaType.None;
+                int currentLevel = 0;
+                int targetLevel = 0;
+
+                if (m_Prefabs.HasComponent(building))
                 {
-                    var prefab = m_Prefabs[entity].m_Prefab;
+                    Entity prefab = m_Prefabs[building].m_Prefab;
                     if (m_Spawnables.HasComponent(prefab))
                     {
-                        var spawn = m_Spawnables[prefab];
-                        var zone = m_Zones[spawn.m_ZonePrefab];
-
-                        if (zone.m_AreaType == AreaType.Residential || zone.m_AreaType == AreaType.Commercial) 
+                        SpawnableBuildingData spawn = m_Spawnables[prefab];
+                        if (m_Zones.HasComponent(spawn.m_ZonePrefab))
                         {
-                            int current = math.clamp((int)spawn.m_Level, 1, 5);
-                            int target = math.clamp(current + 1, 1, 5);
+                            ZoneData zone = m_Zones[spawn.m_ZonePrefab];
+                            areaType = zone.m_AreaType;
 
-                            bool haveSlots = m_MaxLevelCounts.Length > target && m_LevelCounts.Length > target;
-                            bool atCap = haveSlots && m_MaxLevelCounts[target] > 0 &&
-                                         m_LevelCounts[target] >= m_MaxLevelCounts[target];
-
-                            if (atCap)
+                            if (areaType == AreaType.Residential || areaType == AreaType.Commercial)
                             {
-                                // stop future requests: drop ResourceNeeding
-                                m_CommandBuffer.RemoveComponent<ResourceNeeding>(unfilteredChunkIndex, entity);
-                                continue; // skip the rest; we’ve cancelled the upgrade deliveries
+                                isResOrCom = true;
+
+                                currentLevel = math.clamp((int)spawn.m_Level, 1, 5);
+                                targetLevel = math.clamp(currentLevel + 1, 1, 5);
+
+                                // --- 1a) Level cap early-out for Res/Com ---
+                                bool atCap = false;
+
+                                if (areaType == AreaType.Residential)
+                                {
+                                    if (m_MaxLevelCounts.IsCreated &&
+                                        m_LevelCounts.IsCreated &&
+                                        m_MaxLevelCounts.Length > targetLevel &&
+                                        m_LevelCounts.Length > targetLevel &&
+                                        m_MaxLevelCounts[targetLevel] > 0 &&
+                                        m_LevelCounts[targetLevel] >= m_MaxLevelCounts[targetLevel])
+                                    {
+                                        atCap = true;
+                                    }
+                                }
+                                else if (areaType == AreaType.Commercial)
+                                {
+                                    if (m_ComMaxLevelCounts.IsCreated &&
+                                        m_ComLevelCounts.IsCreated &&
+                                        m_ComMaxLevelCounts.Length > targetLevel &&
+                                        m_ComLevelCounts.Length > targetLevel &&
+                                        m_ComMaxLevelCounts[targetLevel] > 0 &&
+                                        m_ComLevelCounts[targetLevel] >= m_ComMaxLevelCounts[targetLevel])
+                                    {
+                                        atCap = true;
+                                    }
+                                }
+
+                                if (atCap)
+                                {
+                                    // Building cannot level any further due to cap:
+                                    // drop the level-up request and clear notification / condition.
+                                    m_CommandBuffer.RemoveComponent<ResourceNeeding>(unfilteredChunkIndex, building);
+                                    m_IconCommandBuffer.Remove(building, m_BuildingConfigurationData.m_LevelingBuildingNotificationPrefab);
+
+                                    BuildingCondition bc = conditions[ci];
+                                    bc.m_Condition = 0;
+                                    conditions[ci] = bc;
+
+                                    continue;
+                                }
                             }
                         }
                     }
                 }
 
-                if (this.m_GuestVehicleBufs.HasBuffer(entity))
+                // --- 2) Legacy cleanup for Office / Industrial (non-Res/Com) ---
+                // We only do this if there ARE guest vehicles, so we don't kill fresh
+                // requests that haven't yet spawned an upkeep truck.
+                if (!isResOrCom && m_GuestVehicleBufs.HasBuffer(building))
                 {
-                    DynamicBuffer<ResourceNeeding> dynamicBuffer = bufferAccessor[index1];
-                    bool flag1 = true;
-                    for (int index2 = 0; index2 < dynamicBuffer.Length; ++index2)
+                    DynamicBuffer<GuestVehicle> guests = m_GuestVehicleBufs[building];
+                    bool hasStale = false;
+
+                    for (int i = 0; i < needings.Length && !hasStale; i++)
                     {
-                        ResourceNeeding resourceNeeding = dynamicBuffer[index2];
-                        if (resourceNeeding.m_Flags == ResourceNeedingFlags.None)
+                        ResourceNeeding rn = needings[i];
+
+                        // The only valid "in-progress" flag in the new game is Requested.
+                        // If it is Requested but there is no upkeep delivery truck for that
+                        // resource anymore, we treat this as a stale / legacy request and clear it.
+                        if (rn.m_Flags == ResourceNeedingFlags.Requested)
                         {
-                            // ISSUE: reference to a compiler-generated method
-                            this.RequestDelivery(unfilteredChunkIndex, ref resourceNeeding, entity);
-                        }
-                        else if (resourceNeeding.m_Flags == ResourceNeedingFlags.Delivering)
-                        {
-                            bool flag2 = false;
-                            // ISSUE: reference to a compiler-generated field
-                            DynamicBuffer<GuestVehicle> guestVehicleBuf = this.m_GuestVehicleBufs[entity];
-                            for (int index3 = 0; index3 < guestVehicleBuf.Length; ++index3)
+                            bool truckOnTheWay = false;
+
+                            for (int g = 0; g < guests.Length; g++)
                             {
-                                // ISSUE: reference to a compiler-generated field
-                                // ISSUE: reference to a compiler-generated field
-                                // ISSUE: reference to a compiler-generated field
-                                // ISSUE: reference to a compiler-generated field
-                                if (this.m_DeliveryTrucks.HasComponent(guestVehicleBuf[index3].m_Vehicle) && (this.m_DeliveryTrucks[guestVehicleBuf[index3].m_Vehicle].m_State & DeliveryTruckFlags.UpkeepDelivery) != (DeliveryTruckFlags)0 && resourceNeeding.m_Resource == this.m_DeliveryTrucks[guestVehicleBuf[index3].m_Vehicle].m_Resource && resourceNeeding.m_Amount == this.m_DeliveryTrucks[guestVehicleBuf[index3].m_Vehicle].m_Amount)
+                                Entity veh = guests[g].m_Vehicle;
+                                if (!m_DeliveryTrucks.HasComponent(veh))
+                                    continue;
+
+                                Game.Vehicles.DeliveryTruck truck = m_DeliveryTrucks[veh];
+
+                                bool isUpkeep = (truck.m_State & DeliveryTruckFlags.UpkeepDelivery) != 0;
+                                if (!isUpkeep)
+                                    continue;
+
+                                if (truck.m_Resource == rn.m_Resource && truck.m_Amount > 0)
                                 {
-                                    flag2 = true;
+                                    truckOnTheWay = true;
                                     break;
                                 }
                             }
-                            if (!flag2)
+
+                            if (!truckOnTheWay)
                             {
-                                // ISSUE: reference to a compiler-generated method
-                                this.RequestDelivery(unfilteredChunkIndex, ref resourceNeeding, entity);
-                                dynamicBuffer[index2] = resourceNeeding;
+                                hasStale = true;
+                                break;
                             }
                         }
-                        if (resourceNeeding.m_Flags != ResourceNeedingFlags.Delivered)
-                            flag1 = false;
                     }
-                    if (flag1)
+
+                    if (hasStale)
                     {
-                        for (int index4 = 0; index4 < dynamicBuffer.Length; ++index4)
-                        {
-                            // ISSUE: reference to a compiler-generated field
-                            // ISSUE: object of a compiler-generated type is created
-                            this.m_LeveUpMaterialQueue.Enqueue(new UrbanInequalityBuildingUpkeepSystem.LevelUpMaterial()
-                            {
-                                m_Resource = dynamicBuffer[index4].m_Resource,
-                                m_Amount = dynamicBuffer[index4].m_Amount
-                            });
-                        }
-                        // ISSUE: reference to a compiler-generated field
-                        this.m_CommandBuffer.RemoveComponent<ResourceNeeding>(unfilteredChunkIndex, entity);
-                        // ISSUE: reference to a compiler-generated field
-                        this.m_LevelupQueue.Enqueue(entity);
-                        BuildingCondition buildingCondition = nativeArray2[index1] with
-                        {
-                            m_Condition = 0
-                        };
-                        nativeArray2[index1] = buildingCondition;
+                        // Cancel old/stuck requests for office/industrial so they can
+                        // start a fresh request cycle under the new logic.
+                        m_CommandBuffer.RemoveComponent<ResourceNeeding>(unfilteredChunkIndex, building);
+                        m_IconCommandBuffer.Remove(building, m_BuildingConfigurationData.m_LevelingBuildingNotificationPrefab);
+
+                        BuildingCondition bc = conditions[ci];
+                        bc.m_Condition = 0;
+                        conditions[ci] = bc;
+
+                        continue;
                     }
+                }
+
+                // --- 3) Vanilla behavior: only process buildings that actually have guest vehicles ---
+                if (!m_GuestVehicleBufs.HasBuffer(building))
+                    continue;
+
+                bool allDelivered = true;
+
+                // We do NOT mutate flags or amounts here – we only check for completion.
+                for (int i = 0; i < needings.Length; ++i)
+                {
+                    if (needings[i].m_Flags != ResourceNeedingFlags.Delivered)
+                    {
+                        allDelivered = false;
+                        break;
+                    }
+                }
+
+                // --- 4) When all resources are delivered, finalize and level up (vanilla logic) ---
+                if (allDelivered && needings.Length > 0)
+                {
+                    for (int i = 0; i < needings.Length; ++i)
+                    {
+                        m_LeveUpMaterialQueue.Enqueue(new UrbanInequalityBuildingUpkeepSystem.LevelUpMaterial
+                        {
+                            m_Resource = needings[i].m_Resource,
+                            m_Amount = needings[i].m_Amount,
+                        });
+                    }
+
+                    m_CommandBuffer.RemoveComponent<ResourceNeeding>(unfilteredChunkIndex, building);
+                    m_IconCommandBuffer.Remove(building, m_BuildingConfigurationData.m_LevelingBuildingNotificationPrefab);
+                    m_LevelupQueue.Enqueue(building);
+
+                    BuildingCondition bc = conditions[ci];
+                    bc.m_Condition = 0;
+                    conditions[ci] = bc;
                 }
             }
         }
 
-        private void RequestDelivery(
-          int unfilteredChunkIndex,
-          ref ResourceNeeding resourceNeeding,
-          Entity entity)
-        {
-            // ISSUE: reference to a compiler-generated field
-            Entity entity1 = this.m_CommandBuffer.CreateEntity(unfilteredChunkIndex);
-            // ISSUE: reference to a compiler-generated field
-            this.m_CommandBuffer.AddComponent<GoodsDeliveryRequest>(unfilteredChunkIndex, entity1, new GoodsDeliveryRequest()
-            {
-                m_Amount = resourceNeeding.m_Amount,
-                m_Flags = GoodsDeliveryFlags.BuildingUpkeep | GoodsDeliveryFlags.IndustrialAllowed | GoodsDeliveryFlags.ImportAllowed,
-                m_Resource = resourceNeeding.m_Resource,
-                m_Target = entity
-            });
-        }
 
         void IJobChunk.Execute(
           in ArchetypeChunk chunk,
@@ -990,36 +1014,47 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
     [BurstCompile]
     private struct UpkeepPaymentJob : IJob
     {
+        [ReadOnly]
+        public uint m_FrameIndex;
         public BufferLookup<Resources> m_Resources;
+        public ComponentLookup<Household> m_Households;
         public NativeQueue<UrbanInequalityBuildingUpkeepSystem.UpkeepPayment> m_UpkeepExpenseQueue;
         public NativeQueue<UrbanInequalityBuildingUpkeepSystem.LevelUpMaterial> m_LevelUpMaterialQueue;
         public NativeArray<int> m_UpkeepMaterialAccumulator;
 
         public void Execute()
         {
-            // ISSUE: variable of a compiler-generated type
             UrbanInequalityBuildingUpkeepSystem.UpkeepPayment upkeepPayment;
-            // ISSUE: reference to a compiler-generated field
             while (this.m_UpkeepExpenseQueue.TryDequeue(out upkeepPayment))
             {
-                // ISSUE: reference to a compiler-generated field
-                // ISSUE: reference to a compiler-generated field
-                if (this.m_Resources.HasBuffer(upkeepPayment.m_RenterEntity))
+                var renter = upkeepPayment.m_RenterEntity;
+
+                // Defensive: skip invalid / null entities
+                if (renter == Entity.Null)
+                    continue;
+
+                // Try to get the resources buffer safely
+                DynamicBuffer<Resources> renterResources;
+                if (!this.m_Resources.TryGetBuffer(renter, out renterResources))
                 {
-                    // ISSUE: reference to a compiler-generated field
-                    // ISSUE: reference to a compiler-generated field
-                    // ISSUE: reference to a compiler-generated field
-                    EconomyUtils.AddResources(Resource.Money, upkeepPayment.m_Price, this.m_Resources[upkeepPayment.m_RenterEntity]);
+                    // Renter no longer exists or has no Resources buffer; nothing to pay into
+                    continue;
+                }
+
+                // Apply the money change
+                EconomyUtils.AddResources(Resource.Money, upkeepPayment.m_Price, renterResources);
+
+                // Track how much this household spent on leveling
+                if (this.m_Households.HasComponent(renter))
+                {
+                    Household household = this.m_Households[renter];
+                    household.m_MoneySpendOnBuildingLevelingLastDay += upkeepPayment.m_Price;
+                    this.m_Households[renter] = household;
                 }
             }
-            // ISSUE: variable of a compiler-generated type
             UrbanInequalityBuildingUpkeepSystem.LevelUpMaterial levelUpMaterial;
-            // ISSUE: reference to a compiler-generated field
             while (this.m_LevelUpMaterialQueue.TryDequeue(out levelUpMaterial))
             {
-                // ISSUE: reference to a compiler-generated field
-                // ISSUE: reference to a compiler-generated field
-                // ISSUE: reference to a compiler-generated field
                 this.m_UpkeepMaterialAccumulator[EconomyUtils.GetResourceIndex(levelUpMaterial.m_Resource)] += levelUpMaterial.m_Amount;
             }
         }
@@ -1506,6 +1541,12 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
         [ReadOnly]
         public ComponentLookup<Game.Vehicles.DeliveryTruck> __Game_Vehicles_DeliveryTruck_RO_ComponentLookup;
         [ReadOnly]
+        public ComponentLookup<PrefabRef> __Game_Prefabs_PrefabRef_RO_ComponentLookup;
+        [ReadOnly]
+        public ComponentLookup<IndustrialProcessData> __Game_Prefabs_IndustrialProcessData_RO_ComponentLookup;
+        [ReadOnly]
+        public ComponentLookup<ServiceAvailable> __Game_Companies_ServiceAvailable_RO_ComponentLookup;
+        [ReadOnly]
         public ComponentLookup<ResourceData> __Game_Prefabs_ResourceData_RO_ComponentLookup;
         [ReadOnly]
         public BufferLookup<Resources> __Game_Economy_Resources_RO_BufferLookup;
@@ -1528,8 +1569,6 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
         [ReadOnly]
         public ComponentLookup<ValidArea> __Game_Zones_ValidArea_RO_ComponentLookup;
         [ReadOnly]
-        public ComponentLookup<PrefabRef> __Game_Prefabs_PrefabRef_RO_ComponentLookup;
-        [ReadOnly]
         public ComponentLookup<PrefabData> __Game_Prefabs_PrefabData_RO_ComponentLookup;
         [ReadOnly]
         public ComponentLookup<Game.Prefabs.BuildingData> __Game_Prefabs_BuildingData_RO_ComponentLookup;
@@ -1549,6 +1588,7 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
         public ComponentLookup<CrimeProducer> __Game_Buildings_CrimeProducer_RW_ComponentLookup;
         public BufferLookup<Renter> __Game_Buildings_Renter_RW_BufferLookup;
         public BufferLookup<Resources> __Game_Economy_Resources_RW_BufferLookup;
+        public ComponentLookup<Household> __Game_Citizens_Household_RW_ComponentLookup;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void __AssignHandles(ref SystemState state)
@@ -1592,6 +1632,11 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
             this.__Game_Vehicles_LayoutElement_RO_BufferLookup = state.GetBufferLookup<LayoutElement>(true);
             // ISSUE: reference to a compiler-generated field
             this.__Game_Vehicles_DeliveryTruck_RO_ComponentLookup = state.GetComponentLookup<Game.Vehicles.DeliveryTruck>(true);
+            this.__Game_Prefabs_PrefabRef_RO_ComponentLookup = state.GetComponentLookup<PrefabRef>(true);
+            // ISSUE: reference to a compiler-generated field
+            this.__Game_Prefabs_IndustrialProcessData_RO_ComponentLookup = state.GetComponentLookup<IndustrialProcessData>(true);
+            // ISSUE: reference to a compiler-generated field
+            this.__Game_Companies_ServiceAvailable_RO_ComponentLookup = state.GetComponentLookup<ServiceAvailable>(true);
             // ISSUE: reference to a compiler-generated field
             this.__Game_Prefabs_ResourceData_RO_ComponentLookup = state.GetComponentLookup<ResourceData>(true);
             // ISSUE: reference to a compiler-generated field
@@ -1617,8 +1662,6 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
             // ISSUE: reference to a compiler-generated field
             this.__Game_Zones_ValidArea_RO_ComponentLookup = state.GetComponentLookup<ValidArea>(true);
             // ISSUE: reference to a compiler-generated field
-            this.__Game_Prefabs_PrefabRef_RO_ComponentLookup = state.GetComponentLookup<PrefabRef>(true);
-            // ISSUE: reference to a compiler-generated field
             this.__Game_Prefabs_PrefabData_RO_ComponentLookup = state.GetComponentLookup<PrefabData>(true);
             // ISSUE: reference to a compiler-generated field
             this.__Game_Prefabs_BuildingData_RO_ComponentLookup = state.GetComponentLookup<Game.Prefabs.BuildingData>(true);
@@ -1640,8 +1683,8 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
             this.__Game_Buildings_CrimeProducer_RW_ComponentLookup = state.GetComponentLookup<CrimeProducer>();
             // ISSUE: reference to a compiler-generated field
             this.__Game_Buildings_Renter_RW_BufferLookup = state.GetBufferLookup<Renter>();
-            // ISSUE: reference to a compiler-generated field
             this.__Game_Economy_Resources_RW_BufferLookup = state.GetBufferLookup<Resources>();
+            this.__Game_Citizens_Household_RW_ComponentLookup = state.GetComponentLookup<Household>();
         }
     }
 }
