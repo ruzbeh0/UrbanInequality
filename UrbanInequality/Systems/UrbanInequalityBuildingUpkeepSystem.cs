@@ -225,6 +225,7 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
             m_Prefabs = InternalCompilerInterface.GetComponentLookup<PrefabRef>(ref this.__TypeHandle.__Game_Prefabs_PrefabRef_RO_ComponentLookup, ref this.CheckedStateRef),
             m_Spawnables = InternalCompilerInterface.GetComponentLookup<SpawnableBuildingData>(ref this.__TypeHandle.__Game_Prefabs_SpawnableBuildingData_RO_ComponentLookup, ref this.CheckedStateRef),
             m_Zones = InternalCompilerInterface.GetComponentLookup<ZoneData>(ref this.__TypeHandle.__Game_Prefabs_ZoneData_RO_ComponentLookup, ref this.CheckedStateRef),
+            m_DeliveryTrucks = InternalCompilerInterface.GetComponentLookup<Game.Vehicles.DeliveryTruck>(ref this.__TypeHandle.__Game_Vehicles_DeliveryTruck_RO_ComponentLookup,ref this.CheckedStateRef),
             m_LevelCounts = levelCounts,
             m_MaxLevelCounts = maxCounts,
             m_ComLevelCounts = comLevelCounts,
@@ -236,10 +237,12 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
         this.Dependency = jobData2.ScheduleParallel<UrbanInequalityBuildingUpkeepSystem.ResourceNeedingUpkeepJob>(this.m_ResourceNeedingBuildingGroup, this.Dependency);
         // ISSUE: reference to a compiler-generated field
         this.m_EndFrameBarrier.AddJobHandleForProducer(this.Dependency);
-        levelCounts.Dispose();
-        maxCounts.Dispose();
-        comLevelCounts.Dispose();
-        comMaxCounts.Dispose();
+        JobHandle disposeHandle = levelCounts.Dispose(this.Dependency);
+        disposeHandle = maxCounts.Dispose(disposeHandle);
+        disposeHandle = comLevelCounts.Dispose(disposeHandle);
+        disposeHandle = comMaxCounts.Dispose(disposeHandle);
+
+        this.Dependency = disposeHandle;
 
         JobHandle outJobHandle;
         JobHandle dependencies;
@@ -1391,7 +1394,7 @@ public partial class UrbanInequalityBuildingUpkeepSystem : GameSystemBase
                         Game.Prefabs.BuildingData buildingData = nativeArray3[index2];
                         BuildingPropertyData buildingPropertyData1 = nativeArray4[index2];
                         ObjectGeometryData objectGeometryData = nativeArray5[index2];
-                        if (level == (int)spawnableBuildingData.m_Level && lotSize.Equals(buildingData.m_LotSize) && (double)objectGeometryData.m_Size.y <= (double)maxHeight && (buildingData.m_Flags & (Game.Prefabs.BuildingFlags.LeftAccess | Game.Prefabs.BuildingFlags.RightAccess)) == accessFlags && buildingPropertyData.m_ResidentialProperties <= buildingPropertyData1.m_ResidentialProperties && buildingPropertyData.m_AllowedManufactured == buildingPropertyData1.m_AllowedManufactured && buildingPropertyData.m_AllowedInput == buildingPropertyData1.m_AllowedInput && buildingPropertyData.m_AllowedSold == buildingPropertyData1.m_AllowedSold && buildingPropertyData.m_AllowedStored == buildingPropertyData1.m_AllowedStored)
+                        if (level == (int)spawnableBuildingData.m_Level && lotSize.Equals(buildingData.m_LotSize) && (double)objectGeometryData.m_Size.y <= (double)maxHeight && (buildingData.m_Flags & (Game.Prefabs.BuildingFlags.LeftAccess | Game.Prefabs.BuildingFlags.RightAccess)) == accessFlags && buildingPropertyData.m_AllowedManufactured == buildingPropertyData1.m_AllowedManufactured && buildingPropertyData.m_AllowedInput == buildingPropertyData1.m_AllowedInput && buildingPropertyData.m_AllowedSold == buildingPropertyData1.m_AllowedSold && buildingPropertyData.m_AllowedStored == buildingPropertyData1.m_AllowedStored)
                         {
                             int num = 100;
                             max += num;
